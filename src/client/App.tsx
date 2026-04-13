@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Button } from './components/ui/Button/Button';
 import { Input } from './components/ui/Input/Input';
 import { CheckCircle2, Circle, Plus, Trash2, List, Star, Briefcase, Heart, Book, LayoutList, Clock } from 'lucide-react';
@@ -22,6 +22,13 @@ export default function App() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [lists, setLists] = useState<TodoList[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [orderedTaskIds, setOrderedTaskIds] = useState<number[]>([]);
+
+  // Drag & drop state
+  const dragItemId = useRef<number | null>(null);
+  const dragOverItemId = useRef<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
+  const [isDraggingId, setIsDraggingId] = useState<number | null>(null);
   
   const [activeListId, setActiveListId] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -91,7 +98,67 @@ export default function App() {
   };
 
   const activeList = useMemo(() => lists.find(l => l.id === activeListId), [lists, activeListId]);
-  const activeTasks = useMemo(() => tasks.filter(t => t.listId === activeListId), [tasks, activeListId]);
+  const rawActiveTasks = useMemo(
+    () => tasks.filter(t => t.listId === activeListId).sort((a, b) => a.order - b.order),
+    [tasks, activeListId]
+  );
+
+  // Sync orderedTaskIds when active list changes or new tasks are added
+  useEffect(() => {
+    const rawIds = rawActiveTasks.map(t => t.id);
+    setOrderedTaskIds(prev => {
+      const prevFiltered = prev.filter(id => rawIds.includes(id));
+      const newIds = rawIds.filter(id => !prevFiltered.includes(id));
+      // New tasks go at the end (they have the highest order in DB already)
+      return [...prevFiltered, ...newIds];
+    });
+  }, [activeListId, rawActiveTasks.length]);
+
+  const activeTasks = useMemo(() => {
+    if (orderedTaskIds.length === 0) return rawActiveTasks;
+    const taskMap = new Map(rawActiveTasks.map(t => [t.id, t]));
+    return orderedTaskIds.map(id => taskMap.get(id)).filter(Boolean) as typeof rawActiveTasks;
+  }, [rawActiveTasks, orderedTaskIds]);
+
+  const handleDragStart = useCallback((taskId: number) => {
+    dragItemId.current = taskId;
+    setIsDraggingId(taskId);
+  }, []);
+
+  const handleDragEnter = useCallback((taskId: number) => {
+    dragOverItemId.current = taskId;
+    setDragOverId(taskId);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    const fromId = dragItemId.current;
+    const toId = dragOverItemId.current;
+
+    if (fromId !== null && toId !== null && fromId !== toId) {
+      setOrderedTaskIds(prev => {
+        const items = [...prev];
+        const fromIdx = items.indexOf(fromId);
+        const toIdx = items.indexOf(toId);
+        if (fromIdx === -1 || toIdx === -1) return prev;
+        items.splice(fromIdx, 1);
+        items.splice(toIdx, 0, fromId);
+
+        // Persist to DB (fire and forget, optimistic update already applied)
+        if (activeListId !== null) {
+          api.todos.reorder.$patch({
+            json: { listId: activeListId, orderedIds: items },
+          }).catch((err: unknown) => console.error('Failed to persist order:', err));
+        }
+
+        return items;
+      });
+    }
+
+    dragItemId.current = null;
+    dragOverItemId.current = null;
+    setIsDraggingId(null);
+    setDragOverId(null);
+  }, [activeListId]);
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,7 +366,7 @@ export default function App() {
                   </form>
 
                   {/* List Section */}
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {!activeList ? (
                       <div className="text-center py-10">
                         <p className="text-text-muted italic">Psst! Create or select a list to start adding tasks. ✨</p>
@@ -310,10 +377,38 @@ export default function App() {
                       </div>
                     ) : (
                       activeTasks.map((task) => (
-                        <div 
+                        <div
                           key={task.id}
-                          className="group flex items-center gap-4 p-4 rounded-2xl border border-border-subtle/50 bg-bg hover:border-border-subtle hover:shadow-sm transition-all duration-200"
+                          draggable
+                          onDragStart={() => handleDragStart(task.id)}
+                          onDragEnter={() => handleDragEnter(task.id)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDragEnd={handleDragEnd}
+                          style={{
+                            opacity: isDraggingId === task.id ? 0.4 : 1,
+                            transition: 'opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
+                            cursor: isDraggingId ? (isDraggingId === task.id ? 'grabbing' : 'grab') : 'grab',
+                          }}
+                          className={[
+                            'group flex items-center gap-4 p-4 rounded-2xl border bg-bg transition-all duration-200',
+                            isDraggingId === task.id
+                              ? 'border-primary/30 shadow-lg shadow-primary/10 scale-[0.99]'
+                              : dragOverId === task.id && isDraggingId !== null
+                                ? 'border-primary border-t-[3px] shadow-md'
+                                : 'border-border-subtle/50 hover:border-border-subtle hover:shadow-sm',
+                          ].join(' ')}
                         >
+                          {/* Drag handle */}
+                          <div
+                            className="flex-shrink-0 text-text-muted/30 group-hover:text-text-muted/60 transition-colors duration-200 select-none"
+                            title="Drag to reorder"
+                          >
+                            <svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor">
+                              <circle cx="4" cy="4" r="1.8" /><circle cx="10" cy="4" r="1.8" />
+                              <circle cx="4" cy="10" r="1.8" /><circle cx="10" cy="10" r="1.8" />
+                              <circle cx="4" cy="16" r="1.8" /><circle cx="10" cy="16" r="1.8" />
+                            </svg>
+                          </div>
                           <button 
                             onClick={() => toggleTask(task.id)}
                             className={`flex-shrink-0 transition-colors duration-200 ${task.completed ? 'text-primary' : 'text-border-subtle hover:text-primary/70'}`}

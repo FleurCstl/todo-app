@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { db } from '../db';
 import { todos } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, max } from 'drizzle-orm';
 
 const TodoSchema = z.object({
   id: z.number().openapi({ example: 1 }),
@@ -10,6 +10,7 @@ const TodoSchema = z.object({
   deadline: z.string().nullable().optional().openapi({ example: '2024-03-20' }),
   createdAt: z.string().openapi({ example: '2024-03-20T10:00:00Z' }),
   listId: z.number().openapi({ example: 1 }),
+  order: z.number().openapi({ example: 0 }),
 }).openapi('Todo');
 
 const CreateTodoSchema = z.object({
@@ -24,17 +25,23 @@ const UpdateTodoSchema = z.object({
   deadline: z.string().nullable().optional().openapi({ example: '2024-03-20' }),
 }).openapi('UpdateTodo');
 
+const ReorderSchema = z.object({
+  listId: z.number().openapi({ example: 1 }),
+  orderedIds: z.array(z.number()).openapi({ example: [3, 1, 2] }),
+}).openapi('Reorder');
+
 const ErrorSchema = z.object({
   error: z.string().openapi({ example: 'Not Found' }),
 }).openapi('Error');
 
 export const todoRoutes = new OpenAPIHono();
 
+// GET / — retourne tous les todos triés par order
 todoRoutes.openapi(
   createRoute({
     method: 'get',
     path: '/',
-    description: 'Liste tous les todos',
+    description: 'Liste tous les todos triés par order',
     responses: {
       200: {
         content: {
@@ -47,7 +54,7 @@ todoRoutes.openapi(
     },
   }),
   async (c) => {
-    const allTodos = await db.select().from(todos);
+    const allTodos = await db.select().from(todos).orderBy(todos.order);
     return c.json(allTodos.map(t => ({
       ...t,
       completed: !!t.completed,
@@ -56,6 +63,7 @@ todoRoutes.openapi(
   }
 );
 
+// POST / — crée un todo avec order = max + 1 pour la liste
 todoRoutes.openapi(
   createRoute({
     method: 'post',
@@ -83,15 +91,66 @@ todoRoutes.openapi(
   }),
   async (c) => {
     const body = await c.req.valid('json');
-    const [insertedTodo] = await db.insert(todos).values(body).returning();
-    const newTodo = {
+
+    // Calcul de l'order max pour cette liste
+    const [result] = await db
+      .select({ maxOrder: max(todos.order) })
+      .from(todos)
+      .where(eq(todos.listId, body.listId));
+    const nextOrder = (result?.maxOrder ?? -1) + 1;
+
+    const [insertedTodo] = await db
+      .insert(todos)
+      .values({ ...body, order: nextOrder })
+      .returning();
+
+    return c.json({
       ...insertedTodo,
       completed: !!insertedTodo.completed
-    };
-    return c.json(newTodo, 201);
+    }, 201);
   }
 );
 
+// PATCH /reorder — met à jour l'ordre de tous les todos d'une liste
+todoRoutes.openapi(
+  createRoute({
+    method: 'patch',
+    path: '/reorder',
+    description: 'Met à jour l\'ordre des todos d\'une liste',
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: ReorderSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: z.object({ success: z.boolean() }),
+          },
+        },
+        description: 'Ordre mis à jour avec succès',
+      },
+    },
+  }),
+  async (c) => {
+    const { orderedIds } = await c.req.valid('json');
+
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        db.update(todos).set({ order: index }).where(eq(todos.id, id))
+      )
+    );
+
+    return c.json({ success: true }, 200);
+  }
+);
+
+// PATCH /:id — met à jour un todo
 todoRoutes.openapi(
   createRoute({
     method: 'patch',
@@ -149,6 +208,7 @@ todoRoutes.openapi(
   }
 );
 
+// DELETE /:id — supprime un todo
 todoRoutes.openapi(
   createRoute({
     method: 'delete',

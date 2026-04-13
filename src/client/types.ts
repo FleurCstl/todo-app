@@ -17,4 +17,5 @@ export interface Task {
   title: string;
   completed: boolean;
   deadline?: string | null;
+  order: number;
 }

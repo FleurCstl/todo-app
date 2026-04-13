@@ -20,6 +20,7 @@ export const todos = sqliteTable('todos', {
   deadline: text('deadline'),
   createdAt: text('created_at').notNull().default(new Date().toISOString()),
   listId: integer('list_id').notNull().references(() => lists.id, { onDelete: 'cascade' }),
+  order: integer('order').notNull().default(0),
 });
 
 export type Folder = typeof folders.$inferSelect;
