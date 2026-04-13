@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from './components/ui/Button/Button';
 import { Input } from './components/ui/Input/Input';
-import { CheckCircle2, Circle, Plus, Trash2, List, Star, Briefcase, Heart, Book, LayoutList } from 'lucide-react';
+import { CheckCircle2, Circle, Plus, Trash2, List, Star, Briefcase, Heart, Book, LayoutList, Clock } from 'lucide-react';
+import { DatePicker } from './components/ui/DatePicker/DatePicker';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { Folder, TodoList, Task } from './types';
 import { ProgressBar } from './components/ui/ProgressBar/ProgressBar';
@@ -101,7 +102,8 @@ export default function App() {
       const res = await api.todos.$post({ 
         json: { 
           title: newTaskTitle.trim(), 
-          listId: activeListId 
+          listId: activeListId,
+          deadline: null
         } 
       });
       if (res.ok) {
@@ -129,6 +131,21 @@ export default function App() {
       }
     } catch (error) {
       console.error('Failed to toggle task:', error);
+    }
+  };
+
+  const updateTaskDeadline = async (id: number, deadline: string | null) => {
+    try {
+      const res = await api.todos[':id'].$patch({ 
+        param: { id: id.toString() }, 
+        json: { deadline } 
+      });
+      if (res.ok) {
+        const updatedTask = await res.json();
+        setTasks(tasks.map(t => t.id === id ? updatedTask : t));
+      }
+    } catch (error) {
+      console.error('Failed to update task deadline:', error);
     }
   };
 
@@ -293,16 +310,39 @@ export default function App() {
                         >
                           {task.completed ? <CheckCircle2 size={24} className="fill-primary/20 border-primary" /> : <Circle size={24} />}
                         </button>
-                        <span className={`flex-1 text-[15px] font-medium transition-all duration-200 ${task.completed ? 'text-text-muted line-through opacity-70' : 'text-text'}`}>
-                          {task.title}
-                        </span>
-                        <button
-                          onClick={() => deleteTask(task.id)}
-                          className="text-text-muted/40 opacity-0 group-hover:opacity-100 hover:text-error transition-all duration-200"
-                          aria-label="Delete task"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <div className="flex-1 flex flex-col gap-0.5">
+                          <span className={`text-[15px] font-medium transition-all duration-200 ${task.completed ? 'text-text-muted line-through opacity-70' : 'text-text'}`}>
+                            {task.title}
+                          </span>
+                          {task.deadline && (
+                            <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                              task.completed 
+                                ? 'text-text-muted/50' 
+                                : new Date(task.deadline) < new Date(new Date().setHours(0,0,0,0))
+                                  ? 'text-error animate-pulse' 
+                                  : 'text-primary/70'
+                            }`}>
+                              <Clock size={12} />
+                              <span>{new Date(task.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+                              {new Date(task.deadline) < new Date(new Date().setHours(0,0,0,0)) && !task.completed && (
+                                <span className="ml-1 uppercase tracking-wider">[Overdue]</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <DatePicker 
+                            date={task.deadline} 
+                            onSelect={(newDate) => updateTaskDeadline(task.id, newDate)} 
+                          />
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            className="text-text-muted/40 opacity-0 group-hover:opacity-100 hover:text-error transition-all duration-200"
+                            aria-label="Delete task"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}

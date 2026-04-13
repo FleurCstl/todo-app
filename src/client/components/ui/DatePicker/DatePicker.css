@@ -1,0 +1,67 @@
+.rdp-custom {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: #E2725B;
+  --rdp-background-color: #C95D48;
+  --rdp-accent-color-foreground: white;
+  margin: 0;
+}
+
+.rdp-custom .rdp-day_selected, 
+.rdp-custom .rdp-day_selected:focus-visible, 
+.rdp-custom .rdp-day_selected:hover {
+  background-color: var(--rdp-accent-color);
+  color: var(--rdp-accent-color-foreground);
+  border-radius: 12px;
+}
+
+.rdp-custom .rdp-day:hover:not(.rdp-day_selected) {
+  background-color: #FDF6E3;
+  color: #E2725B;
+  border-radius: 12px;
+}
+
+.rdp-custom .rdp-head_cell {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #8C817D;
+  padding-bottom: 0.5rem;
+}
+
+.rdp-custom .rdp-caption_label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #4A4341;
+}
+
+.rdp-custom .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: #FDF6E3;
+}
+
+.rdp-custom .rdp-nav_button {
+  background-color: transparent;
+  color: #8C817D;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.rdp-custom .rdp-nav_button:hover {
+  background-color: #FDF6E3;
+  color: #E2725B;
+}
+
+/* Animations for Radix Popover */
+.animate-in {
+  animation: animate-in 0.2s ease-out;
+}
+
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

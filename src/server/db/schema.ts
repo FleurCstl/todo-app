@@ -17,6 +17,7 @@ export const todos = sqliteTable('todos', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   title: text('title').notNull(),
   completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+  deadline: text('deadline'),
   createdAt: text('created_at').notNull().default(new Date().toISOString()),
   listId: integer('list_id').notNull().references(() => lists.id, { onDelete: 'cascade' }),
 });

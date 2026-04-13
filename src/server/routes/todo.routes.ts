@@ -7,6 +7,7 @@ const TodoSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   title: z.string().openapi({ example: 'Faire les courses' }),
   completed: z.boolean().openapi({ example: false }),
+  deadline: z.string().nullable().optional().openapi({ example: '2024-03-20' }),
   createdAt: z.string().openapi({ example: '2024-03-20T10:00:00Z' }),
   listId: z.number().openapi({ example: 1 }),
 }).openapi('Todo');
@@ -14,11 +15,13 @@ const TodoSchema = z.object({
 const CreateTodoSchema = z.object({
   title: z.string().min(1).openapi({ example: 'Apprendre Hono' }),
   listId: z.number().openapi({ example: 1 }),
+  deadline: z.string().nullable().optional().openapi({ example: '2024-03-20' }),
 }).openapi('CreateTodo');
 
 const UpdateTodoSchema = z.object({
   title: z.string().min(1).optional().openapi({ example: 'Apprendre Hono (complété)' }),
   completed: z.boolean().optional().openapi({ example: true }),
+  deadline: z.string().nullable().optional().openapi({ example: '2024-03-20' }),
 }).openapi('UpdateTodo');
 
 const ErrorSchema = z.object({

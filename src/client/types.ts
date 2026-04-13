@@ -16,4 +16,5 @@ export interface Task {
   listId: number;
   title: string;
   completed: boolean;
+  deadline?: string | null;
 }
