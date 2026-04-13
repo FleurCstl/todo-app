@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { db } from '../db';
-import { folders } from '../db/schema';
+import { folders, lists } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 const FolderSchema = z.object({
@@ -77,6 +77,9 @@ folderRoutes.openapi(
       params: z.object({
         id: z.string().openapi({ example: '1' }),
       }),
+      query: z.object({
+        strategy: z.enum(['keep', 'delete']).optional().openapi({ example: 'keep' }),
+      }),
     },
     responses: {
       204: {
@@ -89,6 +92,12 @@ folderRoutes.openapi(
   }),
   async (c) => {
     const id = parseInt(c.req.param('id'));
+    const { strategy = 'delete' } = c.req.valid('query');
+
+    if (strategy === 'keep') {
+      await db.update(lists).set({ folderId: null }).where(eq(lists.folderId, id));
+    }
+
     const [deletedFolder] = await db.delete(folders).where(eq(folders.id, id)).returning();
 
     if (!deletedFolder) {

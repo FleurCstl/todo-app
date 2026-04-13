@@ -143,6 +143,30 @@ export default function App() {
     }
   };
 
+  const handleDeleteFolder = async (folderId: number, strategy: 'keep' | 'delete') => {
+    try {
+      const res = await api.folders[':id'].$delete({ 
+        param: { id: folderId.toString() },
+        query: { strategy }
+      });
+      if (res.ok) {
+        setFolders(folders.filter(f => f.id !== folderId));
+        if (strategy === 'keep') {
+          setLists(lists.map(l => l.folderId === folderId ? { ...l, folderId: null } : l));
+        } else {
+          setLists(lists.filter(l => l.folderId !== folderId));
+          // If active list was in the deleted folder, select another one
+          if (activeList?.folderId === folderId) {
+            const remainingLists = lists.filter(l => l.folderId !== folderId);
+            setActiveListId(remainingLists.length > 0 ? remainingLists[0].id : null);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete folder:', error);
+    }
+  };
+
   const stats = useMemo(() => {
     const completed = activeTasks.filter(t => t.completed).length;
     return { 
@@ -192,6 +216,7 @@ export default function App() {
         activeListId={activeListId} 
         onSelectList={setActiveListId} 
         onCreateFolder={handleCreateFolder}
+        onDeleteFolder={handleDeleteFolder}
         onCreateList={handleCreateList}
         listStats={listStats}
       />

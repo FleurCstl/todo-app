@@ -1,5 +1,5 @@
 import { Folder, TodoList } from '../../types';
-import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List } from 'lucide-react';
+import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/Input/Input';
@@ -11,11 +11,12 @@ interface SidebarProps {
   activeListId: number | null;
   onSelectList: (id: number) => void;
   onCreateFolder: (name: string) => void;
+  onDeleteFolder: (id: number, strategy: 'keep' | 'delete') => void;
   onCreateList: (data: { title: string; folderId?: number | null; icon?: string; color?: string }) => void;
   listStats: Record<number, { total: number, completed: number, percentage: number }>;
 }
 
-export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFolder, onCreateList, listStats }: SidebarProps) {
+export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFolder, onDeleteFolder, onCreateList, listStats }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
     folders.forEach(f => {
@@ -32,6 +33,9 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
   const [newListFolder, setNewListFolder] = useState<number | null>(null);
   const [newListIcon, setNewListIcon] = useState<string>('List');
   const [newListColor, setNewListColor] = useState<string>('#E27D60');
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
 
   const ICONS = [
     { name: 'List', component: List },
@@ -80,6 +84,20 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
     setNewListIcon('List');
     setNewListColor('#E27D60');
     setIsListModalOpen(false);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, folder: Folder) => {
+    e.stopPropagation();
+    setFolderToDelete(folder);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = (strategy: 'keep' | 'delete') => {
+    if (folderToDelete) {
+      onDeleteFolder(folderToDelete.id, strategy);
+      setIsDeleteModalOpen(false);
+      setFolderToDelete(null);
+    }
   };
 
   const uncategorizedLists = lists.filter(list => !list.folderId);
@@ -142,17 +160,26 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
 
             return (
               <div key={folder.id} className="space-y-1">
-                <button
-                  onClick={() => toggleFolder(folder.id)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-text-muted hover:text-text uppercase tracking-wider transition-colors"
-                >
-                  <ChevronRight 
-                    size={16} 
-                    className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
-                  />
-                  <FolderIcon size={14} className="opacity-70" />
-                  <span className="truncate">{folder.name}</span>
-                </button>
+                <div className="group/folder flex items-center pr-2">
+                  <button
+                    onClick={() => toggleFolder(folder.id)}
+                    className="flex-1 flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-text-muted hover:text-text uppercase tracking-wider transition-colors"
+                  >
+                    <ChevronRight 
+                      size={16} 
+                      className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                    />
+                    <FolderIcon size={14} className="opacity-70" />
+                    <span className="truncate">{folder.name}</span>
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteClick(e, folder)}
+                    className="opacity-0 group-hover/folder:opacity-60 hover:!opacity-100 p-1 text-text-muted hover:text-error transition-all"
+                    title="Supprimer le dossier"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
 
                 {/* Folder Lists */}
                 <div 
@@ -308,6 +335,55 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
             <Button type="submit" disabled={!newListTitle.trim()}>Create List</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Folder Modal */}
+      <Modal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        title="Supprimer le dossier"
+      >
+        <div className="space-y-6">
+          <div className="flex items-start gap-4 p-4 rounded-2xl bg-error/5 border border-error/10">
+            <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center text-error flex-shrink-0">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-text mb-1">Attention</p>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Vous êtes sur le point de supprimer le dossier <span className="font-bold text-text">"{folderToDelete?.name}"</span>. 
+                Que souhaitez-vous faire des listes qu'il contient ?
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <button
+              onClick={() => confirmDelete('keep')}
+              className="w-full flex flex-col items-start gap-1 p-4 rounded-2xl border border-border-subtle bg-bg hover:border-primary hover:bg-primary/5 group transition-all"
+            >
+              <span className="text-sm font-bold text-text group-hover:text-primary transition-colors">Garder les listes associées</span>
+              <span className="text-[11px] text-text-muted text-left">Elles seront déplacées dans la section générale.</span>
+            </button>
+
+            <button
+              onClick={() => confirmDelete('delete')}
+              className="w-full flex flex-col items-start gap-1 p-4 rounded-2xl border border-border-subtle bg-bg hover:border-error hover:bg-error/5 group transition-all"
+            >
+              <span className="text-sm font-bold text-text group-hover:text-error transition-colors">Supprimer le dossier et les listes</span>
+              <span className="text-[11px] text-text-muted text-left">Le dossier et tout son contenu seront définitivement perdus.</span>
+            </button>
+          </div>
+
+          <div className="flex justify-center">
+            <button 
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="text-xs font-semibold text-text-muted hover:text-text px-4 py-2 transition-colors"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
       </Modal>
     </aside>
   );
