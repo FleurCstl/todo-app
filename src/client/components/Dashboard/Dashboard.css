@@ -1,0 +1,175 @@
+.dashboard-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.header-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background-color: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px -4px rgba(226, 114, 91, 0.3);
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-subtitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-border-subtle);
+}
+
+.section-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.section-header.overdue {
+  color: var(--color-error);
+  border-bottom-color: color-mix(in srgb, var(--color-error), transparent 80%);
+}
+
+.section-header.upcoming {
+  color: var(--color-primary);
+  border-bottom-color: color-mix(in srgb, var(--color-primary), transparent 80%);
+}
+
+.count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background-color: currentColor;
+  color: white;
+  margin-left: auto;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.dashboard-task-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-task-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.task-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.task-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.task-metadata {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--list-color);
+  background-color: color-mix(in srgb, var(--list-color), transparent 90%);
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.deadline-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.deadline-badge.overdue {
+  color: var(--color-error);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 15px;
+}
+
+@media (min-width: 1024px) {
+  .task-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}

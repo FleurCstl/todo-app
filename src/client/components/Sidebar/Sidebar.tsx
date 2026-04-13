@@ -1,5 +1,5 @@
 import { Folder, TodoList } from '../../types';
-import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle } from 'lucide-react';
+import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/Input/Input';
@@ -110,6 +110,21 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-6">
+        {/* Dashboard Link */}
+        <div className="space-y-1">
+          <button
+            onClick={() => onSelectList(-1)} // Using -1 or null for Dashboard
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-bold ${
+              activeListId === null || activeListId === -1
+                ? 'bg-primary/10 text-primary'
+                : 'text-text-muted hover:bg-black/5 hover:text-text'
+            }`}
+          >
+            <LayoutDashboard size={18} />
+            <span>Dashboard</span>
+          </button>
+        </div>
+
         {/* Uncategorized Lists */}
         {uncategorizedLists.length > 0 && (
           <div className="space-y-1">
