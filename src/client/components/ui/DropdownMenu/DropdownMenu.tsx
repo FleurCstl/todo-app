@@ -41,7 +41,7 @@ export function DropdownMenu({ children }: DropdownMenuProps) {
   );
 }
 
-export function DropdownItem({ onClick, children, icon: Icon }: { onClick: () => void, children: React.ReactNode, icon?: any }) {
+export function DropdownItem({ onClick, children, icon: Icon }: { onClick: () => void, children: React.ReactNode, icon?: React.ElementType }) {
   return (
     <button className="dropdown-item" onClick={onClick}>
       {Icon && <Icon size={14} className="dropdown-item-icon" />}

@@ -13,8 +13,11 @@ interface DashboardProps {
 }
 
 export function Dashboard({ lists, tasks, onSelectList, onToggleTask }: DashboardProps) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const { overdueTasks, upcomingTasks } = useMemo(() => {
     const incompleteTasks = tasks.filter(t => !t.completed && t.deadline);

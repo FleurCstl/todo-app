@@ -54,7 +54,7 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
     { name: 'Book', component: Book },
   ];
 
-  const ICON_MAP: Record<string, any> = {
+  const ICON_MAP: Record<string, React.ElementType> = {
     List: List,
     Star: Star,
     Briefcase: Briefcase,

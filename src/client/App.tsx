@@ -12,7 +12,7 @@ import { TagManager } from './components/TagManager/TagManager';
 import { TagSelector } from './components/TagSelector/TagSelector';
 import { TagBadge } from './components/ui/TagBadge/TagBadge';
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, React.ElementType> = {
   List: List,
   Star: Star,
   Briefcase: Briefcase,
@@ -200,7 +200,7 @@ export default function App() {
       // New tasks go at the end (they have the highest order in DB already)
       return [...prevFiltered, ...newIds];
     });
-  }, [activeListId, rawActiveTasks.length]);
+  }, [activeListId, rawActiveTasks]);
 
   const activeTasks = useMemo(() => {
     if (orderedTaskIds.length === 0) return rawActiveTasks;

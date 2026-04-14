@@ -172,7 +172,7 @@ todoRoutes.openapi(
     try {
       await db.insert(todoTags).values({ todoId, tagId }).onConflictDoNothing();
       return c.json({ success: true }, 200);
-    } catch (e) {
+    } catch {
       return c.json({ error: 'Conflict or Not Found' }, 404);
     }
   }
