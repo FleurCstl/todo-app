@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { TodoList, Task } from '../../types';
 import { Clock, ExternalLink, AlertCircle, Calendar, Circle, LayoutDashboard } from 'lucide-react';
 import { DropdownMenu, DropdownItem } from '../ui/DropdownMenu/DropdownMenu';
+import { TagBadge } from '../ui/TagBadge/TagBadge';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -58,6 +59,13 @@ export function Dashboard({ lists, tasks, onSelectList, onToggleTask }: Dashboar
       <div className="task-info">
         <div className="task-main">
           <span className="task-title">{task.title}</span>
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1 mb-2">
+              {task.tags.map(tag => (
+                <TagBadge key={tag.id} name={tag.name} color={tag.color} />
+              ))}
+            </div>
+          )}
           <div className="task-metadata">
             <span 
               className="list-badge" 

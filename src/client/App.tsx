@@ -4,10 +4,13 @@ import { Input } from './components/ui/Input/Input';
 import { CheckCircle2, Circle, Plus, Trash2, List, Star, Briefcase, Heart, Book, LayoutList, Clock } from 'lucide-react';
 import { DatePicker } from './components/ui/DatePicker/DatePicker';
 import { Sidebar } from './components/Sidebar/Sidebar';
-import { Folder, TodoList, Task } from './types';
+import { Folder, TodoList, Task, Tag } from './types';
 import { ProgressBar } from './components/ui/ProgressBar/ProgressBar';
 import { api } from './api';
 import { Dashboard } from './components/Dashboard/Dashboard';
+import { TagManager } from './components/TagManager/TagManager';
+import { TagSelector } from './components/TagSelector/TagSelector';
+import { TagBadge } from './components/ui/TagBadge/TagBadge';
 
 const ICON_MAP: Record<string, any> = {
   List: List,
@@ -22,8 +25,12 @@ export default function App() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [lists, setLists] = useState<TodoList[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [orderedTaskIds, setOrderedTaskIds] = useState<number[]>([]);
 
+  // Modals state
+  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+  
   // Drag & drop state
   const dragItemId = useRef<number | null>(null);
   const dragOverItemId = useRef<number | null>(null);
@@ -38,22 +45,23 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [foldersRes, listsRes, tasksRes] = await Promise.all([
+        const [foldersRes, listsRes, tasksRes, tagsRes] = await Promise.all([
           api.folders.$get(),
           api.lists.$get(),
           api.todos.$get(),
+          api.tags.$get(),
         ]);
 
-        if (foldersRes.ok && listsRes.ok && tasksRes.ok) {
+        if (foldersRes.ok && listsRes.ok && tasksRes.ok && tagsRes.ok) {
           const foldersData = await foldersRes.json();
           const listsData = await listsRes.json();
           const tasksData = await tasksRes.json();
+          const tagsData = await tagsRes.json();
 
           setFolders(foldersData);
           setLists(listsData);
           setTasks(tasksData);
-
-          // By default, show Dashboard (activeListId is null)
+          setTags(tagsData);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -109,6 +117,71 @@ export default function App() {
       }
     } catch (error) {
       console.error('Failed to update list:', error);
+    }
+  };
+
+  // Tag management
+  const handleCreateTag = async (name: string, color: string) => {
+    try {
+      const res = await api.tags.$post({ json: { name, color } });
+      if (res.ok) {
+        const newTag = await res.json();
+        setTags([...tags, newTag]);
+      }
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+    }
+  };
+
+  const handleDeleteTag = async (id: number) => {
+    try {
+      const res = await api.tags[':id'].$delete({ param: { id: id.toString() } });
+      if (res.ok) {
+        setTags(tags.filter(t => t.id !== id));
+        // Update local tasks state to remove this tag from any tasks that had it
+        setTasks(tasks.map(task => ({
+          ...task,
+          tags: task.tags?.filter(tag => tag.id !== id)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to delete tag:', error);
+    }
+  };
+
+  const handleAddTagToTask = async (taskId: number, tagId: number) => {
+    try {
+      const res = await api.todos[':id'].tags.$post({ 
+        param: { id: taskId.toString() }, 
+        json: { tagId } 
+      });
+      if (res.ok) {
+        const tag = tags.find(t => t.id === tagId);
+        if (tag) {
+          setTasks(tasks.map(t => t.id === taskId ? { 
+            ...t, 
+            tags: [...(t.tags || []), tag] 
+          } : t));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to add tag to task:', error);
+    }
+  };
+
+  const handleRemoveTagFromTask = async (taskId: number, tagId: number) => {
+    try {
+      const res = await api.todos[':id'].tags[':tagId'].$delete({ 
+        param: { id: taskId.toString(), tagId: tagId.toString() } 
+      });
+      if (res.ok) {
+        setTasks(tasks.map(t => t.id === taskId ? { 
+          ...t, 
+          tags: t.tags?.filter(tag => tag.id !== tagId) 
+        } : t));
+      }
+    } catch (error) {
+      console.error('Failed to remove tag from task:', error);
     }
   };
 
@@ -318,9 +391,9 @@ export default function App() {
         onCreateList={handleCreateList}
         onUpdateList={handleUpdateList}
         listStats={listStats}
+        onManageTags={() => setIsTagModalOpen(true)}
       />
 
-      {/* Main Content Area */}
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto flex flex-col pt-8">
         <div className="flex-1 flex justify-center py-12 px-6">
@@ -354,7 +427,7 @@ export default function App() {
                         )}
                         <div>
                           <h1 className="text-3xl font-extrabold tracking-tight text-text mb-1">
-                            {activeList?.title || 'My Tasks'}
+                             {activeList?.title || 'My Tasks'}
                           </h1>
                           <p className="text-text-muted font-medium text-sm">Have a great day, complete your goals!</p>
                         </div>
@@ -431,10 +504,20 @@ export default function App() {
                           >
                             {task.completed ? <CheckCircle2 size={24} className="fill-primary/20 border-primary" /> : <Circle size={24} />}
                           </button>
-                          <div className="flex-1 flex flex-col gap-0.5">
+                          <div className="flex-1 flex flex-col gap-1">
                             <span className={`text-[15px] font-medium transition-all duration-200 ${task.completed ? 'text-text-muted line-through opacity-70' : 'text-text'}`}>
                               {task.title}
                             </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {task.tags?.map(tag => (
+                                <TagBadge 
+                                  key={tag.id} 
+                                  name={tag.name} 
+                                  color={tag.color} 
+                                  onRemove={() => handleRemoveTagFromTask(task.id, tag.id)}
+                                />
+                              ))}
+                            </div>
                             {task.deadline && (
                               <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${
                                 task.completed 
@@ -451,7 +534,13 @@ export default function App() {
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <TagSelector 
+                              availableTags={tags} 
+                              taskTags={task.tags || []} 
+                              onAddTag={(tagId) => handleAddTagToTask(task.id, tagId)}
+                              onRemoveTag={(tagId) => handleRemoveTagFromTask(task.id, tagId)}
+                            />
                             <DatePicker 
                               date={task.deadline} 
                               onSelect={(newDate) => updateTaskDeadline(task.id, newDate)} 
@@ -474,6 +563,14 @@ export default function App() {
           )}
         </div>
       </div>
+
+      <TagManager 
+        isOpen={isTagModalOpen} 
+        onClose={() => setIsTagModalOpen(false)} 
+        tags={tags}
+        onCreateTag={handleCreateTag}
+        onDeleteTag={handleDeleteTag}
+      />
     </div>
   );
 }

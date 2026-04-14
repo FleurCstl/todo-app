@@ -1,5 +1,5 @@
 import { Folder, TodoList } from '../../types';
-import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle, LayoutDashboard, Pencil } from 'lucide-react';
+import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle, LayoutDashboard, Pencil, Tag as TagIcon } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/Input/Input';
@@ -15,9 +15,10 @@ interface SidebarProps {
   onCreateList: (data: { title: string; folderId?: number | null; icon?: string; color?: string }) => void;
   onUpdateList: (id: number, data: { title?: string; folderId?: number | null; icon?: string; color?: string }) => void;
   listStats: Record<number, { total: number, completed: number, percentage: number }>;
+  onManageTags: () => void;
 }
 
-export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFolder, onDeleteFolder, onCreateList, onUpdateList, listStats }: SidebarProps) {
+export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFolder, onDeleteFolder, onCreateList, onUpdateList, listStats, onManageTags }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
     folders.forEach(f => {
@@ -306,6 +307,15 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
           className="flex-1 text-xs bg-bg text-text hover:bg-black/5 hover:text-text border border-border-subtle shadow-none h-9 px-0"
         >
           <FolderPlus size={14} className="mr-1.5" /> Folder
+        </Button>
+      </div>
+
+      <div className="px-4 pb-4">
+        <Button 
+          onClick={onManageTags}
+          className="w-full text-xs bg-primary/5 text-primary hover:bg-primary/10 border border-primary/20 shadow-none h-9"
+        >
+          <TagIcon size={14} className="mr-1.5" /> Manage Tags
         </Button>
       </div>
 

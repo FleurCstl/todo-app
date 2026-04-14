@@ -11,6 +11,12 @@ export interface TodoList {
   color?: string;
 }
 
+export interface Tag {
+  id: number;
+  name: string;
+  color: string;
+}
+
 export interface Task {
   id: number;
   listId: number;
@@ -18,4 +24,5 @@ export interface Task {
   completed: boolean;
   deadline?: string | null;
   order: number;
+  tags?: Tag[];
 }

@@ -1,7 +1,8 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { db } from '../db';
-import { todos } from '../db/schema';
-import { eq, max } from 'drizzle-orm';
+import { todos, tags, todoTags } from '../db/schema';
+import { eq, max, and } from 'drizzle-orm';
+import { TagSchema, ErrorSchema } from '../../shared/schemas';
 
 const TodoSchema = z.object({
   id: z.number().openapi({ example: 1 }),
@@ -11,6 +12,7 @@ const TodoSchema = z.object({
   createdAt: z.string().openapi({ example: '2024-03-20T10:00:00Z' }),
   listId: z.number().openapi({ example: 1 }),
   order: z.number().openapi({ example: 0 }),
+  tags: z.array(TagSchema).optional().openapi({ example: [{ id: 1, name: 'Urgent', color: '#ff0000' }] }),
 }).openapi('Todo');
 
 const CreateTodoSchema = z.object({
@@ -30,13 +32,9 @@ const ReorderSchema = z.object({
   orderedIds: z.array(z.number()).openapi({ example: [3, 1, 2] }),
 }).openapi('Reorder');
 
-const ErrorSchema = z.object({
-  error: z.string().openapi({ example: 'Not Found' }),
-}).openapi('Error');
-
 export const todoRoutes = new OpenAPIHono();
 
-// GET / — retourne tous les todos triés par order
+// GET / — retourne tous les todos triés par order avec leurs tags
 todoRoutes.openapi(
   createRoute({
     method: 'get',
@@ -55,11 +53,30 @@ todoRoutes.openapi(
   }),
   async (c) => {
     const allTodos = await db.select().from(todos).orderBy(todos.order);
-    return c.json(allTodos.map(t => ({
-      ...t,
-      completed: !!t.completed,
-      createdAt: t.createdAt || new Date().toISOString()
-    })), 200);
+    
+    // Fetch all tags for all todos in one or two queries could be better, 
+    // but for simplicity let's fetch them now. 
+    // In a real app we'd join todoTags and tags.
+    const todosWithTags = await Promise.all(allTodos.map(async (todo) => {
+      const associatedTags = await db
+        .select({
+          id: tags.id,
+          name: tags.name,
+          color: tags.color,
+        })
+        .from(todoTags)
+        .innerJoin(tags, eq(todoTags.tagId, tags.id))
+        .where(eq(todoTags.todoId, todo.id));
+
+      return {
+        ...todo,
+        completed: !!todo.completed,
+        createdAt: todo.createdAt || new Date().toISOString(),
+        tags: associatedTags,
+      };
+    }));
+
+    return c.json(todosWithTags, 200);
   }
 );
 
@@ -92,7 +109,6 @@ todoRoutes.openapi(
   async (c) => {
     const body = await c.req.valid('json');
 
-    // Calcul de l'order max pour cette liste
     const [result] = await db
       .select({ maxOrder: max(todos.order) })
       .from(todos)
@@ -106,8 +122,91 @@ todoRoutes.openapi(
 
     return c.json({
       ...insertedTodo,
-      completed: !!insertedTodo.completed
+      completed: !!insertedTodo.completed,
+      tags: [],
     }, 201);
+  }
+);
+
+// POST /:id/tags — ajoute un tag à un todo
+todoRoutes.openapi(
+  createRoute({
+    method: 'post',
+    path: '/{id}/tags',
+    description: 'Ajoute un tag à un todo',
+    request: {
+      params: z.object({
+        id: z.string().openapi({ example: '1' }),
+      }),
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({ tagId: z.number() }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: z.object({ success: z.boolean() }),
+          },
+        },
+        description: 'Tag ajouté avec succès',
+      },
+      404: {
+        content: {
+          'application/json': {
+            schema: ErrorSchema,
+          },
+        },
+        description: 'Todo ou Tag non trouvé',
+      },
+    },
+  }),
+  async (c) => {
+    const todoId = parseInt(c.req.param('id'));
+    const { tagId } = await c.req.valid('json');
+
+    try {
+      await db.insert(todoTags).values({ todoId, tagId }).onConflictDoNothing();
+      return c.json({ success: true }, 200);
+    } catch (e) {
+      return c.json({ error: 'Conflict or Not Found' }, 404);
+    }
+  }
+);
+
+// DELETE /:id/tags/:tagId — retire un tag d'un todo
+todoRoutes.openapi(
+  createRoute({
+    method: 'delete',
+    path: '/{id}/tags/{tagId}',
+    description: 'Retire un tag d\'un todo',
+    request: {
+      params: z.object({
+        id: z.string().openapi({ example: '1' }),
+        tagId: z.string().openapi({ example: '1' }),
+      }),
+    },
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: z.object({ success: z.boolean() }),
+          },
+        },
+        description: 'Tag retiré avec succès',
+      },
+    },
+  }),
+  async (c) => {
+    const todoId = parseInt(c.req.param('id'));
+    const tagId = parseInt(c.req.param('tagId'));
+
+    await db.delete(todoTags).where(and(eq(todoTags.todoId, todoId), eq(todoTags.tagId, tagId)));
+    return c.json({ success: true }, 200);
   }
 );
 
@@ -201,9 +300,21 @@ todoRoutes.openapi(
       return c.json({ error: 'Not Found' }, 404);
     }
 
+    // Fetch tags to return complete Todo object
+    const associatedTags = await db
+      .select({
+        id: tags.id,
+        name: tags.name,
+        color: tags.color,
+      })
+      .from(todoTags)
+      .innerJoin(tags, eq(todoTags.tagId, tags.id))
+      .where(eq(todoTags.todoId, id));
+
     return c.json({
       ...updatedTodo,
-      completed: !!updatedTodo.completed
+      completed: !!updatedTodo.completed,
+      tags: associatedTags,
     }, 200);
   }
 );
