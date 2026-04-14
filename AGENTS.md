@@ -32,28 +32,32 @@ This is a modern full-stack todo application designed with performance and devel
 ## 🎨 Coding Standards
 
 ### General Rules
-- **TypeScript**: Always use strict typing. Avoid `any`.
+
+- **TypeScript**: Always use strict typing. Never use `any`.
 - **Naming**: Use camelCase for variables/functions, PascalCase for components/types.
 - **Imports**: Prefer absolute-like paths or clear relative paths. Organize imports (built-ins, external, internal).
 - **Documentation**: Use JSDoc for all functions and explain complex logic with inline comments.
 
 ### Backend (Hono)
+
 - Use `@hono/zod-openapi` for defining routes and schemas to maintain a single source of truth.
 - Controllers should be modular and kept in `src/server/`.
 
 ### Frontend (React)
+
 - **Components**: Functional components with Hooks.
 - **Styling**: Tailwind CSS 4.0. Avoid inline styles unless dynamic.
 - **Icons**: Use `lucide-react`.
 - **State Management**: Keep it simple (React State/Context) unless specified otherwise.
 
 ### Database (Drizzle)
+
 - Schema definitions are in `src/server/db/schema.ts`.
 - Prefer typesafe queries using the Drizzle instance.
 
 ## 🧪 Testing Instructions
 
-- Tests are located alongside the code or in specific `__tests__` directories.
+- Tests are located alongside the code in specific `__tests__` directories.
 - **Mandatory Generation**: Every new frontend component and backend logic/route MUST include a corresponding test file.
 - Always run `pnpm test` before submitting changes.
 - For UI tests, use React Testing Library (configured with Vitest).

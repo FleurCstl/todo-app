@@ -1,7 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { Input } from './Input';
+import { Input } from '../Input';
 
+/**
+ * Input component tests.
+ */
 describe('Input', () => {
   it('renders correctly', () => {
     render(<Input placeholder="Enter text" />);
