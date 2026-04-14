@@ -1,5 +1,5 @@
 import { Folder, TodoList } from '../../types';
-import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle, LayoutDashboard } from 'lucide-react';
+import { ChevronRight, Folder as FolderIcon, Plus, FolderPlus, Star, Briefcase, Heart, Book, List, Trash2, AlertTriangle, LayoutDashboard, Pencil } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/Input/Input';
@@ -13,10 +13,11 @@ interface SidebarProps {
   onCreateFolder: (name: string) => void;
   onDeleteFolder: (id: number, strategy: 'keep' | 'delete') => void;
   onCreateList: (data: { title: string; folderId?: number | null; icon?: string; color?: string }) => void;
+  onUpdateList: (id: number, data: { title?: string; folderId?: number | null; icon?: string; color?: string }) => void;
   listStats: Record<number, { total: number, completed: number, percentage: number }>;
 }
 
-export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFolder, onDeleteFolder, onCreateList, listStats }: SidebarProps) {
+export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFolder, onDeleteFolder, onCreateList, onUpdateList, listStats }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
     folders.forEach(f => {
@@ -33,6 +34,13 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
   const [newListFolder, setNewListFolder] = useState<number | null>(null);
   const [newListIcon, setNewListIcon] = useState<string>('List');
   const [newListColor, setNewListColor] = useState<string>('#E27D60');
+
+  const [isEditListModalOpen, setIsEditListModalOpen] = useState(false);
+  const [listToEdit, setListToEdit] = useState<TodoList | null>(null);
+  const [editListTitle, setEditListTitle] = useState('');
+  const [editListFolder, setEditListFolder] = useState<number | null>(null);
+  const [editListIcon, setEditListIcon] = useState<string>('List');
+  const [editListColor, setEditListColor] = useState<string>('#E27D60');
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
@@ -86,6 +94,29 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
     setIsListModalOpen(false);
   };
 
+  const handleEditListClick = (e: React.MouseEvent, list: TodoList) => {
+    e.stopPropagation();
+    setListToEdit(list);
+    setEditListTitle(list.title);
+    setEditListFolder(list.folderId || null);
+    setEditListIcon(list.icon || 'List');
+    setEditListColor(list.color || '#E27D60');
+    setIsEditListModalOpen(true);
+  };
+
+  const handleEditListSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!listToEdit || !editListTitle.trim()) return;
+    onUpdateList(listToEdit.id, {
+      title: editListTitle.trim(),
+      folderId: editListFolder,
+      icon: editListIcon,
+      color: editListColor,
+    });
+    setIsEditListModalOpen(false);
+    setListToEdit(null);
+  };
+
   const handleDeleteClick = (e: React.MouseEvent, folder: Folder) => {
     e.stopPropagation();
     setFolderToDelete(folder);
@@ -132,7 +163,7 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
               <button
                 key={list.id}
                 onClick={() => onSelectList(list.id)}
-                className={`w-full flex flex-col gap-1.5 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+                className={`w-full group/list flex flex-col gap-1.5 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
                   activeListId === list.id
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-muted hover:bg-black/5 hover:text-text'
@@ -149,8 +180,15 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
                   })()}
                   <span className="truncate flex-1 text-left">{list.title}</span>
                   {listStats[list.id]?.total > 0 && (
-                    <span className="text-[10px] opacity-60 font-bold">{listStats[list.id].percentage}%</span>
+                    <span className="text-[10px] opacity-60 font-bold mr-1">{listStats[list.id].percentage}%</span>
                   )}
+                  <button
+                    onClick={(e) => handleEditListClick(e, list)}
+                    className="opacity-0 group-hover/list:opacity-60 hover:!opacity-100 p-1 text-text-muted hover:text-primary transition-all"
+                    title="Modifier la liste"
+                  >
+                    <Pencil size={14} />
+                  </button>
                 </div>
                 {listStats[list.id]?.total > 0 && (
                   <div className="pl-[30px] w-full">
@@ -208,7 +246,7 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
                         <button
                           key={list.id}
                           onClick={() => onSelectList(list.id)}
-                          className={`w-full flex flex-col gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                          className={`w-full group/list flex flex-col gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                             activeListId === list.id
                               ? 'bg-primary/10 text-primary shadow-sm border border-primary/10'
                               : 'text-text-muted hover:bg-black/5 hover:text-text border border-transparent'
@@ -221,8 +259,15 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
                             />
                             <span className="truncate flex-1 text-left">{list.title}</span>
                             {listStats[list.id]?.total > 0 && (
-                              <span className="text-[10px] opacity-60 font-bold">{listStats[list.id].percentage}%</span>
+                              <span className="text-[10px] opacity-60 font-bold mr-1">{listStats[list.id].percentage}%</span>
                             )}
+                            <button
+                              onClick={(e) => handleEditListClick(e, list)}
+                              className="opacity-0 group-hover/list:opacity-60 hover:!opacity-100 p-1 text-text-muted hover:text-primary transition-all"
+                              title="Modifier la liste"
+                            >
+                              <Pencil size={12} />
+                            </button>
                           </div>
                           {listStats[list.id]?.total > 0 && (
                             <div className="pl-[18px] w-full">
@@ -274,7 +319,7 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
             onChange={(e) => setNewFolderName(e.target.value)}
           />
           <div className="flex justify-end gap-2 mt-4">
-            <Button type="button" onClick={() => setIsFolderModalOpen(false)} className="bg-transparent text-text hover:bg-black/5 shadow-none hover:shadow-none">Cancel</Button>
+            <Button type="button" variant="ghost" onClick={() => setIsFolderModalOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={!newFolderName.trim()}>Create Folder</Button>
           </div>
         </form>
@@ -346,8 +391,80 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button type="button" onClick={() => setIsListModalOpen(false)} className="bg-transparent text-text hover:bg-black/5 shadow-none hover:shadow-none">Cancel</Button>
+            <Button type="button" variant="ghost" onClick={() => setIsListModalOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={!newListTitle.trim()}>Create List</Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={isEditListModalOpen} onClose={() => setIsEditListModalOpen(false)} title="Modifier la liste">
+        <form onSubmit={handleEditListSubmit} className="flex flex-col gap-6">
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-text">Nom de la liste</label>
+            <Input 
+              autoFocus
+              placeholder="Ex: Courses, Projet Alpha" 
+              value={editListTitle}
+              onChange={(e) => setEditListTitle(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-text">Dossier (Optionnel)</label>
+            <select 
+              value={editListFolder || ''}
+              onChange={(e) => setEditListFolder(e.target.value ? parseInt(e.target.value) : null)}
+              className="w-full h-10 px-3 rounded-xl bg-bg border border-border-subtle text-text text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none transition-all"
+            >
+              <option value="">Aucun (Listes)</option>
+              {folders.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text">Icône</label>
+            <div className="flex gap-2">
+              {ICONS.map(({ name, component: Icon }) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setEditListIcon(name)}
+                  className={`p-2 rounded-xl border transition-all ${
+                    editListIcon === name 
+                      ? 'border-primary bg-primary/10 text-primary' 
+                      : 'border-border-subtle text-text-muted hover:bg-bg hover:border-gray-300'
+                  }`}
+                >
+                  <Icon size={20} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text">Couleur</label>
+            <div className="flex gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setEditListColor(color)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    editListColor === color 
+                      ? 'border-text scale-110 shadow-sm' 
+                      : 'border-transparent hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button type="button" variant="ghost" onClick={() => setIsEditListModalOpen(false)}>Annuler</Button>
+            <Button type="submit" disabled={!editListTitle.trim()}>Enregistrer</Button>
           </div>
         </form>
       </Modal>
@@ -391,12 +508,12 @@ export function Sidebar({ folders, lists, activeListId, onSelectList, onCreateFo
           </div>
 
           <div className="flex justify-center">
-            <button 
+            <Button 
+              variant="ghost"
               onClick={() => setIsDeleteModalOpen(false)}
-              className="text-xs font-semibold text-text-muted hover:text-text px-4 py-2 transition-colors"
             >
               Annuler
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

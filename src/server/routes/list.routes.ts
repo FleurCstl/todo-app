@@ -18,6 +18,13 @@ const CreateListSchema = z.object({
   color: z.string().optional().openapi({ example: '#E27D60' }),
 }).openapi('CreateList');
 
+const UpdateListSchema = z.object({
+  title: z.string().min(1).optional().openapi({ example: 'Inbox' }),
+  folderId: z.number().nullable().optional().openapi({ example: 1 }),
+  icon: z.string().optional().openapi({ example: 'List' }),
+  color: z.string().optional().openapi({ example: '#E27D60' }),
+}).openapi('UpdateList');
+
 export const listRoutes = new OpenAPIHono();
 
 listRoutes.openapi(
@@ -71,6 +78,50 @@ listRoutes.openapi(
     const body = await c.req.valid('json');
     const [newList] = await db.insert(lists).values(body).returning();
     return c.json(newList, 201);
+  }
+);
+
+listRoutes.openapi(
+  createRoute({
+    method: 'patch',
+    path: '/{id}',
+    description: 'Met à jour une liste',
+    request: {
+      params: z.object({
+        id: z.string().openapi({ example: '1' }),
+      }),
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateListSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: ListSchema,
+          },
+        },
+        description: 'Liste mise à jour avec succès',
+      },
+      404: {
+        description: 'Liste non trouvée',
+      },
+    },
+  }),
+  async (c) => {
+    const id = parseInt(c.req.param('id'));
+    const body = await c.req.valid('json');
+    const [updatedList] = await db.update(lists).set(body).where(eq(lists.id, id)).returning();
+
+    if (!updatedList) {
+      return c.body(null, 404);
+    }
+
+    return c.json(updatedList, 200);
   }
 );
 

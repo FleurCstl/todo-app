@@ -97,6 +97,21 @@ export default function App() {
     }
   };
 
+  const handleUpdateList = async (id: number, data: { title?: string; folderId?: number | null; icon?: string; color?: string }) => {
+    try {
+      const res = await api.lists[':id'].$patch({
+        param: { id: id.toString() },
+        json: data
+      });
+      if (res.ok) {
+        const updatedList = await res.json();
+        setLists(lists.map(l => l.id === id ? updatedList : l));
+      }
+    } catch (error) {
+      console.error('Failed to update list:', error);
+    }
+  };
+
   const activeList = useMemo(() => lists.find(l => l.id === activeListId), [lists, activeListId]);
   const rawActiveTasks = useMemo(
     () => tasks.filter(t => t.listId === activeListId).sort((a, b) => a.order - b.order),
@@ -301,6 +316,7 @@ export default function App() {
         onCreateFolder={handleCreateFolder}
         onDeleteFolder={handleDeleteFolder}
         onCreateList={handleCreateList}
+        onUpdateList={handleUpdateList}
         listStats={listStats}
       />
 
