@@ -1,237 +1,82 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Button } from './components/ui/Button/Button';
-import { Input } from './components/ui/Input/Input';
-import { CheckCircle2, Circle, Plus, Trash2, List, Star, Briefcase, Heart, Book, LayoutList, Clock } from 'lucide-react';
-import { DatePicker } from './components/ui/DatePicker/DatePicker';
+import { useState, useMemo } from 'react';
+import { List, Star, Briefcase, Heart, Book, LayoutList } from 'lucide-react';
 import { Sidebar } from './components/Sidebar/Sidebar';
-import { Folder, TodoList, Task, Tag } from './types';
-import { ProgressBar } from './components/ui/ProgressBar/ProgressBar';
-import { api } from './api';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { TagManager } from './components/TagManager/TagManager';
-import { TagSelector } from './components/TagSelector/TagSelector';
-import { TagBadge } from './components/ui/TagBadge/TagBadge';
+import { TaskView } from './components/TaskView/TaskView';
+import { useAppData } from './hooks/useAppData';
+import { useTaskOperations } from './hooks/useTaskOperations';
+import { useTagOperations } from './hooks/useTagOperations';
+import { useTaskReorder } from './hooks/useTaskReorder';
+import { calculateStats, calculateListStats } from './utils/stats';
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  List: List,
-  Star: Star,
-  Briefcase: Briefcase,
-  Heart: Heart,
-  Book: Book,
-  LayoutList: LayoutList,
+  List,
+  Star,
+  Briefcase,
+  Heart,
+  Book,
+  LayoutList,
 };
 
+/**
+ * Main application component.
+ * Orchestrates high-level state, layout, and component integration.
+ */
 export default function App() {
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [lists, setLists] = useState<TodoList[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [orderedTaskIds, setOrderedTaskIds] = useState<number[]>([]);
-
-  // Modals state
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-  
-  // Drag & drop state
-  const dragItemId = useRef<number | null>(null);
-  const dragOverItemId = useRef<number | null>(null);
-  const [dragOverId, setDragOverId] = useState<number | null>(null);
-  const [isDraggingId, setIsDraggingId] = useState<number | null>(null);
-  
   const [activeListId, setActiveListId] = useState<number | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
 
-  // Fetch data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [foldersRes, listsRes, tasksRes, tagsRes] = await Promise.all([
-          api.folders.$get(),
-          api.lists.$get(),
-          api.todos.$get(),
-          api.tags.$get(),
-        ]);
+  // Core Data & State
+  const {
+    folders,
+    lists,
+    tasks,
+    setTasks,
+    tags,
+    setTags,
+    isLoading,
+    handleCreateFolder,
+    handleCreateList,
+    handleUpdateList,
+    handleDeleteFolder,
+  } = useAppData();
 
-        if (foldersRes.ok && listsRes.ok && tasksRes.ok && tagsRes.ok) {
-          const foldersData = await foldersRes.json();
-          const listsData = await listsRes.json();
-          const tasksData = await tasksRes.json();
-          const tagsData = await tagsRes.json();
+  // Task Operations
+  const {
+    handleAddTask,
+    toggleTask,
+    updateTaskDeadline,
+    deleteTask,
+  } = useTaskOperations({ tasks, setTasks });
 
-          setFolders(foldersData);
-          setLists(listsData);
-          setTasks(tasksData);
-          setTags(tagsData);
-        }
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Tag Operations
+  const {
+    handleCreateTag,
+    handleUpdateTag,
+    handleDeleteTag,
+    handleAddTagToTask,
+    handleRemoveTagFromTask,
+    handleQuickCreateTag,
+  } = useTagOperations({ tags, setTags, setTasks });
 
-    fetchData();
-  }, []);
-
-  const handleCreateFolder = async (name: string) => {
-    try {
-      const res = await api.folders.$post({ json: { name } });
-      if (res.ok) {
-        const newFolder = await res.json();
-        setFolders([...folders, newFolder]);
-      }
-    } catch (error) {
-      console.error('Failed to create folder:', error);
-    }
-  };
-
-  const handleCreateList = async (data: { title: string; folderId?: number | null; icon?: string; color?: string }) => {
-    try {
-      const res = await api.lists.$post({ 
-        json: { 
-          title: data.title, 
-          folderId: data.folderId, 
-          icon: data.icon, 
-          color: data.color 
-        } 
-      });
-      if (res.ok) {
-        const newList = await res.json();
-        setLists([...lists, newList]);
-        setActiveListId(newList.id);
-      }
-    } catch (error) {
-      console.error('Failed to create list:', error);
-    }
-  };
-
-  const handleUpdateList = async (id: number, data: { title?: string; folderId?: number | null; icon?: string; color?: string }) => {
-    try {
-      const res = await api.lists[':id'].$patch({
-        param: { id: id.toString() },
-        json: data
-      });
-      if (res.ok) {
-        const updatedList = await res.json();
-        setLists(lists.map(l => l.id === id ? updatedList : l));
-      }
-    } catch (error) {
-      console.error('Failed to update list:', error);
-    }
-  };
-
-  // Tag management
-  const handleCreateTag = async (name: string, color: string) => {
-    try {
-      const res = await api.tags.$post({ json: { name, color } });
-      if (res.ok) {
-        const newTagArr = await res.json();
-        // Hono might return the object directly or an array depending on implementation
-        // But the schema says it returns TagSchema
-        const newTag = newTagArr;
-        setTags([...tags, newTag]);
-        return newTag;
-      }
-    } catch (error) {
-      console.error('Failed to create tag:', error);
-    }
-  };
-
-  const handleQuickCreateTag = async (taskId: number, name: string) => {
-    const newTag = await handleCreateTag(name, '#6b7280');
-    if (newTag) {
-      await handleAddTagToTask(taskId, newTag.id);
-    }
-  };
-
-  const handleUpdateTag = async (id: number, data: { name?: string, color?: string }) => {
-    try {
-      const res = await api.tags[':id'].$patch({
-        param: { id: id.toString() },
-        json: data
-      });
-      if (res.ok) {
-        const updatedTag = await res.json();
-        setTags(tags.map(t => t.id === id ? updatedTag : t));
-        // Also update tags in the tasks state
-        setTasks(tasks.map(task => ({
-          ...task,
-          tags: task.tags?.map(tag => tag.id === id ? updatedTag : tag)
-        })));
-      }
-    } catch (error) {
-      console.error('Failed to update tag:', error);
-    }
-  };
-
-  const handleDeleteTag = async (id: number) => {
-    try {
-      const res = await api.tags[':id'].$delete({ param: { id: id.toString() } });
-      if (res.ok) {
-        setTags(tags.filter(t => t.id !== id));
-        // Update local tasks state to remove this tag from any tasks that had it
-        setTasks(tasks.map(task => ({
-          ...task,
-          tags: task.tags?.filter(tag => tag.id !== id)
-        })));
-      }
-    } catch (error) {
-      console.error('Failed to delete tag:', error);
-    }
-  };
-
-  const handleAddTagToTask = async (taskId: number, tagId: number) => {
-    try {
-      const res = await api.todos[':id'].tags.$post({ 
-        param: { id: taskId.toString() }, 
-        json: { tagId } 
-      });
-      if (res.ok) {
-        const tag = tags.find(t => t.id === tagId);
-        if (tag) {
-          setTasks(tasks.map(t => t.id === taskId ? { 
-            ...t, 
-            tags: [...(t.tags || []), tag] 
-          } : t));
-        }
-      }
-    } catch (error) {
-      console.error('Failed to add tag to task:', error);
-    }
-  };
-
-  const handleRemoveTagFromTask = async (taskId: number, tagId: number) => {
-    try {
-      const res = await api.todos[':id'].tags[':tagId'].$delete({ 
-        param: { id: taskId.toString(), tagId: tagId.toString() } 
-      });
-      if (res.ok) {
-        setTasks(tasks.map(t => t.id === taskId ? { 
-          ...t, 
-          tags: t.tags?.filter(tag => tag.id !== tagId) 
-        } : t));
-      }
-    } catch (error) {
-      console.error('Failed to remove tag from task:', error);
-    }
-  };
-
+  // Derived State
   const activeList = useMemo(() => lists.find(l => l.id === activeListId), [lists, activeListId]);
+  
   const rawActiveTasks = useMemo(
     () => tasks.filter(t => t.listId === activeListId).sort((a, b) => a.order - b.order),
     [tasks, activeListId]
   );
 
-  // Sync orderedTaskIds when active list changes or new tasks are added
-  useEffect(() => {
-    const rawIds = rawActiveTasks.map(t => t.id);
-    setOrderedTaskIds(prev => {
-      const prevFiltered = prev.filter(id => rawIds.includes(id));
-      const newIds = rawIds.filter(id => !prevFiltered.includes(id));
-      // New tasks go at the end (they have the highest order in DB already)
-      return [...prevFiltered, ...newIds];
-    });
-  }, [activeListId, rawActiveTasks]);
+  // Drag & Drop
+  const {
+    orderedTaskIds,
+    handleDragStart,
+    handleDragEnter,
+    handleDragEnd,
+    isDraggingId,
+    dragOverId,
+  } = useTaskReorder({ activeListId, rawActiveTasks });
 
   const activeTasks = useMemo(() => {
     if (orderedTaskIds.length === 0) return rawActiveTasks;
@@ -239,159 +84,9 @@ export default function App() {
     return orderedTaskIds.map(id => taskMap.get(id)).filter(Boolean) as typeof rawActiveTasks;
   }, [rawActiveTasks, orderedTaskIds]);
 
-  const handleDragStart = useCallback((taskId: number) => {
-    dragItemId.current = taskId;
-    setIsDraggingId(taskId);
-  }, []);
-
-  const handleDragEnter = useCallback((taskId: number) => {
-    dragOverItemId.current = taskId;
-    setDragOverId(taskId);
-  }, []);
-
-  const handleDragEnd = useCallback(() => {
-    const fromId = dragItemId.current;
-    const toId = dragOverItemId.current;
-
-    if (fromId !== null && toId !== null && fromId !== toId) {
-      setOrderedTaskIds(prev => {
-        const items = [...prev];
-        const fromIdx = items.indexOf(fromId);
-        const toIdx = items.indexOf(toId);
-        if (fromIdx === -1 || toIdx === -1) return prev;
-        items.splice(fromIdx, 1);
-        items.splice(toIdx, 0, fromId);
-
-        // Persist to DB (fire and forget, optimistic update already applied)
-        if (activeListId !== null) {
-          api.todos.reorder.$patch({
-            json: { listId: activeListId, orderedIds: items },
-          }).catch((err: unknown) => console.error('Failed to persist order:', err));
-        }
-
-        return items;
-      });
-    }
-
-    dragItemId.current = null;
-    dragOverItemId.current = null;
-    setIsDraggingId(null);
-    setDragOverId(null);
-  }, [activeListId]);
-
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskTitle.trim() || activeListId === null) return;
-    
-    try {
-      const res = await api.todos.$post({ 
-        json: { 
-          title: newTaskTitle.trim(), 
-          listId: activeListId,
-          deadline: null
-        } 
-      });
-      if (res.ok) {
-        const newTask = await res.json();
-        setTasks([...tasks, newTask]);
-        setNewTaskTitle('');
-      }
-    } catch (error) {
-      console.error('Failed to add task:', error);
-    }
-  };
-
-  const toggleTask = async (id: number) => {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
-
-    try {
-      const res = await api.todos[':id'].$patch({ 
-        param: { id: id.toString() }, 
-        json: { completed: !task.completed } 
-      });
-      if (res.ok) {
-        const updatedTask = await res.json();
-        setTasks(tasks.map(t => t.id === id ? updatedTask : t));
-      }
-    } catch (error) {
-      console.error('Failed to toggle task:', error);
-    }
-  };
-
-  const updateTaskDeadline = async (id: number, deadline: string | null) => {
-    try {
-      const res = await api.todos[':id'].$patch({ 
-        param: { id: id.toString() }, 
-        json: { deadline } 
-      });
-      if (res.ok) {
-        const updatedTask = await res.json();
-        setTasks(tasks.map(t => t.id === id ? updatedTask : t));
-      }
-    } catch (error) {
-      console.error('Failed to update task deadline:', error);
-    }
-  };
-
-  const deleteTask = async (id: number) => {
-    try {
-      const res = await api.todos[':id'].$delete({ param: { id: id.toString() } });
-      if (res.ok) {
-        setTasks(tasks.filter(t => t.id !== id));
-      }
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-    }
-  };
-
-  const handleDeleteFolder = async (folderId: number, strategy: 'keep' | 'delete') => {
-    try {
-      const res = await api.folders[':id'].$delete({ 
-        param: { id: folderId.toString() },
-        query: { strategy }
-      });
-      if (res.ok) {
-        setFolders(folders.filter(f => f.id !== folderId));
-        if (strategy === 'keep') {
-          setLists(lists.map(l => l.folderId === folderId ? { ...l, folderId: null } : l));
-        } else {
-          setLists(lists.filter(l => l.folderId !== folderId));
-          // If active list was in the deleted folder, select another one
-          if (activeList?.folderId === folderId) {
-            const remainingLists = lists.filter(l => l.folderId !== folderId);
-            setActiveListId(remainingLists.length > 0 ? remainingLists[0].id : null);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to delete folder:', error);
-    }
-  };
-
-  const stats = useMemo(() => {
-    const completed = activeTasks.filter(t => t.completed).length;
-    return { 
-      completed, 
-      total: activeTasks.length, 
-      percentage: activeTasks.length === 0 ? 0 : Math.round((completed / activeTasks.length) * 100) 
-    };
-  }, [activeTasks]);
-
-  const listStats = useMemo(() => {
-    const statsMap: Record<number, { total: number, completed: number, percentage: number }> = {};
-    lists.forEach(list => {
-      const listTasks = tasks.filter(t => t.listId === list.id);
-      const total = listTasks.length;
-      const completed = listTasks.filter(t => t.completed).length;
-      statsMap[list.id] = {
-        total,
-        completed,
-        percentage: total === 0 ? 0 : Math.round((completed / total) * 100)
-      };
-    });
-    return statsMap;
-  }, [lists, tasks]);
+  // Statistics
+  const stats = useMemo(() => calculateStats(activeTasks), [activeTasks]);
+  const listStats = useMemo(() => calculateListStats(lists, tasks), [lists, tasks]);
 
   const themeStyle = useMemo(() => {
     if (!activeList?.color) return {};
@@ -411,7 +106,6 @@ export default function App() {
 
   return (
     <div className="h-screen w-full bg-bg flex overflow-hidden" style={themeStyle}>
-      {/* Sidebar Area */}
       <Sidebar 
         folders={folders} 
         lists={lists} 
@@ -425,8 +119,7 @@ export default function App() {
         onManageTags={() => setIsTagModalOpen(true)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto flex flex-col pt-8">
+      <main className="flex-1 overflow-y-auto flex flex-col pt-8">
         <div className="flex-1 flex justify-center py-12 px-6">
           {activeListId === null ? (
             <div className="w-full max-w-4xl">
@@ -434,175 +127,42 @@ export default function App() {
                 lists={lists} 
                 tasks={tasks} 
                 onSelectList={setActiveListId} 
-                onToggleTask={toggleTask}
+                onToggleTask={async (id) => { await toggleTask(id); }}
               />
             </div>
           ) : (
             <div className="w-full max-w-2xl h-fit">
-              <div className="bg-surface rounded-3xl shadow-[0_4px_20px_rgba(110,95,80,0.08)] overflow-hidden border border-border-subtle transition-all duration-300">
-                <div className="p-8">
-                  {/* Header Section */}
-                  <div className="mb-8">
-                    <div className="flex justify-between items-end mb-4">
-                      <div className="flex items-center gap-4">
-                        {activeList && (
-                          <div 
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-primary shadow-sm ring-1 ring-primary/20"
-                            style={{ backgroundColor: 'var(--color-primary-10, color-mix(in srgb, var(--color-primary), transparent 90%))' }}
-                          >
-                            {(() => {
-                              const IconComponent = ICON_MAP[activeList.icon || 'List'] || List;
-                              return <IconComponent size={24} />;
-                            })()}
-                          </div>
-                        )}
-                        <div>
-                          <h1 className="text-3xl font-extrabold tracking-tight text-text mb-1">
-                             {activeList?.title || 'My Tasks'}
-                          </h1>
-                          <p className="text-text-muted font-medium text-sm">Have a great day, complete your goals!</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-center justify-center bg-primary/10 text-primary w-16 h-16 rounded-2xl shadow-sm border border-primary/20 transition-all duration-300">
-                        <span className="text-xl font-bold leading-none">{stats.percentage}%</span>
-                      </div>
-                    </div>
-                    <ProgressBar progress={stats.percentage} />
-                  </div>
-
-                  {/* Input Section */}
-                  <form onSubmit={handleAddTask} className="flex gap-3 mt-4 mb-8">
-                    <Input
-                      placeholder={activeList ? `Add task to "${activeList.title}"...` : "Select a list first"}
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      disabled={!activeList}
-                      className="flex-1 shadow-sm border-border-subtle"
-                    />
-                    <Button type="submit" disabled={!activeList || !newTaskTitle.trim()} className="shadow-md shadow-primary/20">
-                      <Plus size={20} className="mr-1" />
-                      Add
-                    </Button>
-                  </form>
-
-                  {/* List Section */}
-                  <div className="space-y-1">
-                    {!activeList ? (
-                      <div className="text-center py-10">
-                        <p className="text-text-muted italic">Psst! Create or select a list to start adding tasks. ✨</p>
-                      </div>
-                    ) : activeTasks.length === 0 ? (
-                      <div className="text-center py-10">
-                        <p className="text-text-muted">No tasks in this list yet! 🎉</p>
-                      </div>
-                    ) : (
-                      activeTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          draggable
-                          onDragStart={() => handleDragStart(task.id)}
-                          onDragEnter={() => handleDragEnter(task.id)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDragEnd={handleDragEnd}
-                          style={{
-                            opacity: isDraggingId === task.id ? 0.4 : 1,
-                            transition: 'opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
-                            cursor: isDraggingId ? (isDraggingId === task.id ? 'grabbing' : 'grab') : 'grab',
-                          }}
-                          className={[
-                            'group flex items-center gap-4 p-4 rounded-2xl border bg-bg transition-all duration-200',
-                            isDraggingId === task.id
-                              ? 'border-primary/30 shadow-lg shadow-primary/10 scale-[0.99]'
-                              : dragOverId === task.id && isDraggingId !== null
-                                ? 'border-primary border-t-[3px] shadow-md'
-                                : 'border-border-subtle/50 hover:border-border-subtle hover:shadow-sm',
-                          ].join(' ')}
-                        >
-                          {/* Drag handle */}
-                          <div
-                            className="flex-shrink-0 text-text-muted/30 group-hover:text-text-muted/60 transition-colors duration-200 select-none"
-                            title="Drag to reorder"
-                          >
-                            <svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor">
-                              <circle cx="4" cy="4" r="1.8" /><circle cx="10" cy="4" r="1.8" />
-                              <circle cx="4" cy="10" r="1.8" /><circle cx="10" cy="10" r="1.8" />
-                              <circle cx="4" cy="16" r="1.8" /><circle cx="10" cy="16" r="1.8" />
-                            </svg>
-                          </div>
-                          <button 
-                            onClick={() => toggleTask(task.id)}
-                            className={`flex-shrink-0 transition-colors duration-200 ${task.completed ? 'text-primary' : 'text-border-subtle hover:text-primary/70'}`}
-                          >
-                            {task.completed ? <CheckCircle2 size={24} className="fill-primary/20 border-primary" /> : <Circle size={24} />}
-                          </button>
-                          <div className="flex-1 flex flex-col gap-1">
-                            <span className={`text-[15px] font-medium transition-all duration-200 ${task.completed ? 'text-text-muted line-through opacity-70' : 'text-text'}`}>
-                              {task.title}
-                            </span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {task.tags?.map(tag => (
-                                <TagBadge 
-                                  key={tag.id} 
-                                  name={tag.name} 
-                                  color={tag.color} 
-                                  onRemove={() => handleRemoveTagFromTask(task.id, tag.id)}
-                                />
-                              ))}
-                            </div>
-                            {task.deadline && (
-                              <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                                task.completed 
-                                  ? 'text-text-muted/50' 
-                                  : new Date(task.deadline) < new Date(new Date().setHours(0,0,0,0))
-                                    ? 'text-error animate-pulse' 
-                                    : 'text-primary/70'
-                              }`}>
-                                <Clock size={12} />
-                                <span>{new Date(task.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
-                                {new Date(task.deadline) < new Date(new Date().setHours(0,0,0,0)) && !task.completed && (
-                                  <span className="ml-1 uppercase tracking-wider">[Overdue]</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <TagSelector 
-                              availableTags={tags} 
-                              taskTags={task.tags || []} 
-                              onAddTag={(tagId) => handleAddTagToTask(task.id, tagId)}
-                              onRemoveTag={(tagId) => handleRemoveTagFromTask(task.id, tagId)}
-                              onCreateTag={(name) => handleQuickCreateTag(task.id, name)}
-                            />
-                            <DatePicker 
-                              date={task.deadline} 
-                              onSelect={(newDate) => updateTaskDeadline(task.id, newDate)} 
-                            />
-                            <button
-                              onClick={() => deleteTask(task.id)}
-                              className="text-text-muted/40 opacity-0 group-hover:opacity-100 hover:text-error transition-all duration-200"
-                              aria-label="Delete task"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+              <TaskView 
+                activeList={activeList}
+                activeTasks={activeTasks}
+                availableTags={tags}
+                iconMap={ICON_MAP}
+                stats={stats}
+                isDraggingId={isDraggingId}
+                dragOverId={dragOverId}
+                onAddTask={(title) => handleAddTask(title, activeListId)}
+                onToggleTask={async (id) => { await toggleTask(id); }}
+                onDeleteTask={async (id) => { await deleteTask(id); }}
+                onUpdateDeadline={async (id, deadline) => { await updateTaskDeadline(id, deadline); }}
+                onAddTagToTask={async (taskId, tagId) => { await handleAddTagToTask(taskId, tagId); }}
+                onRemoveTagFromTask={async (taskId, tagId) => { await handleRemoveTagFromTask(taskId, tagId); }}
+                onQuickCreateTag={async (taskId, name) => { await handleQuickCreateTag(taskId, name); }}
+                onDragStart={handleDragStart}
+                onDragEnter={handleDragEnter}
+                onDragEnd={handleDragEnd}
+              />
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       <TagManager 
         isOpen={isTagModalOpen} 
         onClose={() => setIsTagModalOpen(false)} 
         tags={tags}
         onCreateTag={handleCreateTag}
-        onUpdateTag={handleUpdateTag}
-        onDeleteTag={handleDeleteTag}
+        onUpdateTag={async (id, data) => { await handleUpdateTag(id, data); }}
+        onDeleteTag={async (id) => { await handleDeleteTag(id); }}
       />
     </div>
   );
