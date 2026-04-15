@@ -16,21 +16,17 @@ vi.mock('../api', () => ({
  * Main App component tests.
  */
 describe('App', () => {
-  it('renders loading state initially', () => {
-    // We intentionally don't await anything here to see the loading state
+  it('renders loading state initially and then main content', async () => {
+    // Check loading state immediately
     render(<App />);
     expect(screen.getByText(/loading taskmaster/i)).toBeInTheDocument();
-  });
 
-  it('renders main content after loading', async () => {
-    render(<App />);
-    
+    // Wait for loading to finish to avoid act() warnings from state updates after test completes
     await waitFor(() => {
       expect(screen.queryByText(/loading taskmaster/i)).not.toBeInTheDocument();
     });
     
     expect(screen.getByText('TaskMaster')).toBeInTheDocument();
-    // Use role and name to be specific about which Dashboard text we want (the heading)
     expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument();
   });
 });
