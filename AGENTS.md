@@ -46,11 +46,7 @@ This is a modern full-stack todo application designed with performance and devel
 ### Frontend (React)
 
 - **Components**: Functional components with Hooks.
-- **Decomposition**: Always break down complex components into smaller, focused sub-components. If a component grows too large or handles multiple responsibilities, extract logic and UI into separate sub-components to maintain readability and testability.
-- **Logic Extraction**: 
-  - Functions, hooks, and helpers specific to a single component should be placed in `helpers/`, `hooks/`, or `utils/` sub-folders within that component's directory.
-  - Logic shared across multiple components should be placed in shared directories at `src/client/hooks/` or `src/client/utils/`.
-  - Every extracted piece of logic MUST have its own test file.
+- **Modularity & Logic**: Follow the **Logic Organization** skill for component decomposition and logic extraction into `helpers/`, `hooks/`, or `utils/`. Every extracted piece of logic MUST have its own test file.
 - **Styling**: Tailwind CSS 4.0. Avoid inline styles unless dynamic.
 - **Icons**: Use `lucide-react`.
 - **State Management**: Keep it simple (React State/Context) unless specified otherwise.
@@ -69,9 +65,10 @@ This is a modern full-stack todo application designed with performance and devel
 
 ## 📝 PR Guidelines
 
-- Use **Conventional Commits** (e.g., `feat:`, `fix:`, `docs:`, `refactor:`).
-- Ensure `pnpm lint` passes before committing.
-- Document any new API endpoints or significant architectural changes here or in relevant docstrings.
+- **Conventional Commits**: All commits must follow the `commitlint` convention: `<type>(<scope>): <description>`.
+- **Granularity**: Prefer multiple small, logical commits over one giant commit.
+- **Verification**: Ensure `pnpm lint` and `pnpm test` pass before committing.
+- **Documentation**: Document any new API endpoints or significant architectural changes here or in relevant docstrings.
 
 ## 🤖 Instructions for AI Agents
 
@@ -86,5 +83,9 @@ You are an expert developer working on this codebase. You MUST adhere to the fol
 7. **Clean Diffs**: Produce focused changes. Run `pnpm lint` after your modifications to ensure no linting errors were introduced.
 8. **Documentation**: Every function MUST have a descriptive JSDoc comment. Complicated logic MUST be explained with inline comments to aid maintainability.
 9. **Test-Driven Development**: Always generate test files for any new frontend component or backend feature. Ensure all tests pass before completing the task.
-10. **Component Modularity**: When refactoring or creating frontend components, you MUST decompose large components into smaller, manageable sub-components. Do not keep all logic and markup in a single "mega-component".
-11. **Logic Organization**: Proactively extract logic from components into dedicated folders. Use local sub-folders (`helpers`, `hooks`, `utils`) for component-specific logic, and root-level client folders for shared logic. You MUST automatically generate tests for all extracted helpers, hooks, and utility functions.
+10. **Logic & Modularity**: Adhere strictly to the **Logic Organization** skill. Decompose "mega-components", extract logic into dedicated sub-folders, and generate mandatory tests for all extracted units.
+11. **Git Commit Hygiene**: 
+    - Follow the `git-commit` skill strictly.
+    - Use granular commits.
+    - Every commit MUST include a `Co-authored-by: Antigravity <antigravity@googlemind.com>` trailer.
+    - **NEVER** push to GitHub without explicit USER validation.
