@@ -12,17 +12,24 @@ Use this skill to ensure that all UI components follow the project's premium aes
 
 ## Core Workflow
 
-### 1. Component Creation
+### 1. Component Modularity & Factorization
+- **Single Responsibility**: Each component must have a clear, single responsibility.
+- **Component Splitting**: If a component grows beyond ~150 lines or contains too much UI logic, split it into smaller sub-components.
+- **Sub-component Structure**: For a complex component (e.g., `Sidebar.tsx`), create a `components/` subdirectory (e.g., `Sidebar/components/`) to hold its internal parts.
+- **Logic Extraction**: Extract complex state management or data fetching into custom hooks or utility functions.
+- **Avoid Prop Drilling**: Use context or composition where it makes sense to avoid deep prop drilling in complex component trees.
+
+### 2. Component Creation
 Place components in `src/client/components/` or a feature-specific subdirectory.
 - Use functional components with hooks.
 - Prefix UI-agnostic components with `ui/` (e.g., `src/client/components/ui/Button.tsx`).
 
-### 2. Styling with Tailwind 4.0
+### 3. Styling with Tailwind 4.0
 - Avoid standard colors like `red-500`. Use curated palettes if available or HSL/OKLCH values for premium feel.
 - Implement hover states and subtle micro-animations.
 - Use `cn` (classnames merge) utility if available for dynamic styles.
 
-### 3. Icons
+### 4. Icons
 - Use `lucide-react` for all icons.
 - Ensure consistent sizing (e.g., `size={20}` or via CSS classes).
 
@@ -44,17 +51,18 @@ export const EditButton = ({ onClick }: { onClick: () => void }) => (
 );
 ```
 
-### 4. Accessibility & Tooltips
+### 5. Accessibility & Tooltips
 - Every interactive element without a visible text label (e.g., an icon-only button) **MUST** have a Tooltip component wrapping it to provide context.
 - Use `aria-label` or `aria-labelledby` for all interactive elements to ensure screen reader Compatibility.
 - Ensure keyboard navigability (focus states, `tabIndex`).
 
-### 5. Mobile-Friendly Design
+### 6. Mobile-Friendly Design
 - Ensure touch targets are at least `44x44px` for mobile devices.
 - Use responsive Tailwind classes (`sm:`, `md:`, `lg:`) to adapt layouts for different screen sizes.
 - Prioritize ease of use on touch screens (e.g., avoiding hover-only critical actions without mobile alternatives).
 
 ## Success Criteria
+- [ ] **Modularity**: Component is well-split into smaller sub-components. Logic is factored into hooks or helpers. No monolithic files.
 - [ ] Component is fully responsive and mobile-friendly (large touch targets, adaptive layout).
 - [ ] Accessibility: Interactive elements have descriptive IDs, `aria-label`, and are keyboard-navigable.
 - [ ] Tooltips: Icon-only buttons or label-less elements are wrapped in a Tooltip.
