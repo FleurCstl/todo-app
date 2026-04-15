@@ -90,6 +90,6 @@ You are an expert developer working on this codebase. You MUST adhere to the fol
 11. **Git Commit Hygiene**: 
     - Follow the `git-commit` skill strictly.
     - Use granular commits.
-    - Every commit MUST include a `Co-authored-by` trailer using the current agent's identity (e.g., `Antigravity <antigravity@googlemind.com>`).
+    - Every commit MUST include a `Co-authored-by` trailer using the current agent's identity and model (e.g., `Antigravity (Gemini 3 Flash) <antigravity@googlemind.com>`).
     - **NEVER** push to GitHub without explicit USER validation.
 12. **Documentation Maintenance**: Follow the `documentation-maintenance` skill. Ensure that `README.md` and any relevant files in `docs/` are updated whenever you introduce a new feature or change the technical architecture. The goal is to keep documentation synchronized with the codebase at all times.
