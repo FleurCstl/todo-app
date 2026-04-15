@@ -22,12 +22,12 @@ Whenever a new feature or significant change is requested:
 - As you complete each task, update `DEVPLAN.md` by checking the corresponding checkbox (`[x]`).
 - Do not move to the next major block of work until the current one is validated (e.g., tests pass for that block).
 
-### 3. Pre-Commit Cleanup
-- Before running the `git-commit` skill, check if all items in `DEVPLAN.md` are completed.
-- **MANDATORY**: The `DEVPLAN.md` file MUST be deleted before committing.
-- **BLOCKER**: If any task is not checked, do not delete the file and do not proceed with the commit. Fix the missing items first.
+### 3. Finalization & Commit
+- Before running the `git-commit` skill, check the completion status of `DEVPLAN.md`.
+- **Completed**: If ALL tasks are checked (`[x]`), the `DEVPLAN.md` file MUST be deleted before committing.
+- **In Progress**: If some tasks are NOT checked, the `DEVPLAN.md` file MUST be included in the commit to track progress.
 
 ## Success Criteria
 - [ ] `DEVPLAN.md` is created at the start of the task.
-- [ ] All checkboxes in `DEVPLAN.md` are checked before completion.
-- [ ] `DEVPLAN.md` is deleted from the filesystem before the final commit.
+- [ ] `DEVPLAN.md` is updated regularly and committed if the work is still in progress.
+- [ ] `DEVPLAN.md` is deleted from the filesystem only when all tasks are completed and ready for the final commit.

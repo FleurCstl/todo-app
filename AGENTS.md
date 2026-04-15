@@ -29,23 +29,11 @@ This project is optimized for AI assistance. These guidelines and workflows ensu
 
 ## 🧩 Specialized Workflows (Skills)
 
-For detailed instructions on specific tasks, use the corresponding skill in `.skills/`:
-
-| Skill | Use When... |
-| :--- | :--- |
-| [`ui-component`](.skills/ui-component/SKILL.md) | Creating/refactoring UI with Tailwind & Lucide. |
-| [`logic-organization`](.skills/logic-organization/SKILL.md) | Decomposing components & extracting hooks/helpers. |
-| [`api-route`](.skills/api-route/SKILL.md) | Adding new OpenAPI routes or integration. |
-| [`db-schema`](.skills/db-schema/SKILL.md) | Updating the Drizzle database schema. |
-| [`test-validation`](.skills/test-validation/SKILL.md) | Running tests and ensuring quality (Mandatory). |
-| [`git-commit`](.skills/git-commit/SKILL.md) | Finalizing a task and committing (Conventional Commits). |
-| [`dev-planning`](.skills/dev-planning/SKILL.md) | Starting a new feature with a `DEVPLAN.md`. |
-| [`documentation-maintenance`](.skills/documentation-maintenance/SKILL.md) | Updating README or docs. |
-| [`dead-code-fixer`](.skills/dead-code-fixer/SKILL.md) | Cleaning up unused code. |
+Always follow the specialized workflows defined in the `.skills/` directory for task-specific instructions (UI, API, DB, logic organization, etc.).
 
 ## ⚠️ Critical Rules
 
 1. **No Placeholders**: Never use TODOs or placeholders in code.
-2. **Mandatory Tests**: Every new feature or extracted logic MUST have a test.
+2. **Mandatory Tests**: Every new feature, UI component, or extracted logic MUST have a test.
 3. **Pre-Commit Check**: Always run `test-validation` before committing.
 4. **User Validation**: Explicit approval is required before any `git push`.
