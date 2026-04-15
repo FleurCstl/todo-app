@@ -4,13 +4,14 @@ import { Modal } from '../ui/Modal/Modal';
 import { Input } from '../ui/Input/Input';
 import { Button } from '../ui/Button/Button';
 import { TagBadge } from '../ui/TagBadge/TagBadge';
-import { Trash2, Plus, Check } from 'lucide-react';
+import { Trash2, Plus, Check, Pencil, X } from 'lucide-react';
 
 interface TagManagerProps {
   isOpen: boolean;
   onClose: () => void;
   tags: Tag[];
   onCreateTag: (name: string, color: string) => Promise<void>;
+  onUpdateTag: (id: number, data: { name?: string, color?: string }) => Promise<void>;
   onDeleteTag: (id: number) => Promise<void>;
 }
 
@@ -26,10 +27,11 @@ const PRESET_COLORS = [
   '#64748b', // Slate
 ];
 
-export function TagManager({ isOpen, onClose, tags, onCreateTag, onDeleteTag }: TagManagerProps) {
+export function TagManager({ isOpen, onClose, tags, onCreateTag, onUpdateTag, onDeleteTag }: TagManagerProps) {
   const [newName, setNewName] = useState('');
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingTagId, setEditingTagId] = useState<number | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +44,11 @@ export function TagManager({ isOpen, onClose, tags, onCreateTag, onDeleteTag }: 
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateColor = async (id: number, color: string) => {
+    await onUpdateTag(id, { color });
+    setEditingTagId(null);
   };
 
   return (
@@ -98,16 +105,62 @@ export function TagManager({ isOpen, onClose, tags, onCreateTag, onDeleteTag }: 
               tags.map(tag => (
                 <div 
                   key={tag.id} 
-                  className="flex items-center justify-between p-3 rounded-xl border border-border-subtle bg-surface hover:border-primary/30 transition-all duration-200 group"
+                  className={`flex flex-col gap-3 p-3 rounded-xl border transition-all duration-200 group ${
+                    editingTagId === tag.id ? 'border-primary ring-1 ring-primary/20 bg-primary/5' : 'border-border-subtle bg-surface hover:border-primary/30'
+                  }`}
                 >
-                  <TagBadge name={tag.name} color={tag.color} size="md" />
-                  <button
-                    onClick={() => onDeleteTag(tag.id)}
-                    className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
-                    aria-label={`Delete tag ${tag.name}`}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center justify-between">
+                    <TagBadge name={tag.name} color={tag.color} size="md" />
+                    <div className="flex items-center gap-1">
+                      {editingTagId === tag.id ? (
+                        <button
+                          onClick={() => setEditingTagId(null)}
+                          className="p-1.5 text-text-muted hover:text-text hover:bg-bg rounded-lg transition-all duration-200"
+                          title="Cancel editing"
+                        >
+                          <X size={16} />
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setEditingTagId(tag.id)}
+                            className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+                            title="Changer la couleur"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => onDeleteTag(tag.id)}
+                            className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+                            aria-label={`Delete tag ${tag.name}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {editingTagId === tag.id && (
+                    <div className="pt-2 border-t border-border-subtle/50 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 px-1">Choisir une nouvelle couleur</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {PRESET_COLORS.map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => handleUpdateColor(tag.id, color)}
+                            className={`w-6 h-6 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                              tag.color === color ? 'border-text scale-110' : 'border-transparent hover:scale-110'
+                            }`}
+                            style={{ backgroundColor: color }}
+                          >
+                            {tag.color === color && <Check size={10} className="text-white" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}

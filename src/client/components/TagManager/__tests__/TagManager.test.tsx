@@ -18,6 +18,7 @@ describe('TagManager', () => {
         onClose={() => {}} 
         tags={mockTags} 
         onCreateTag={async () => {}} 
+        onUpdateTag={async () => {}}
         onDeleteTag={async () => {}} 
       />
     );
@@ -31,6 +32,7 @@ describe('TagManager', () => {
         onClose={() => {}} 
         tags={mockTags} 
         onCreateTag={async () => {}} 
+        onUpdateTag={async () => {}}
         onDeleteTag={async () => {}} 
       />
     );
@@ -46,6 +48,7 @@ describe('TagManager', () => {
         onClose={() => {}} 
         tags={mockTags} 
         onCreateTag={onCreateTag} 
+        onUpdateTag={async () => {}}
         onDeleteTag={async () => {}} 
       />
     );
@@ -71,11 +74,42 @@ describe('TagManager', () => {
         onClose={() => {}} 
         tags={mockTags} 
         onCreateTag={async () => {}} 
+        onUpdateTag={async () => {}}
         onDeleteTag={onDeleteTag} 
       />
     );
 
     fireEvent.click(screen.getByLabelText(/delete tag work/i));
     expect(onDeleteTag).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onUpdateTag when a new color is selected for a tag', async () => {
+    const onUpdateTag = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TagManager 
+        isOpen={true} 
+        onClose={() => {}} 
+        tags={mockTags} 
+        onCreateTag={async () => {}} 
+        onUpdateTag={onUpdateTag}
+        onDeleteTag={async () => {}} 
+      />
+    );
+
+    // Open editing mode for first tag
+    const editButtons = screen.getAllByTitle(/changer la couleur/i);
+    fireEvent.click(editButtons[0]);
+
+    // Find the color choices in the editing section
+    const colorText = screen.getByText(/choisir une nouvelle couleur/i);
+    expect(colorText).toBeInTheDocument();
+
+    const colorButtons = screen.getAllByRole('button').filter(b => b.style.backgroundColor !== '');
+    // There are 9 presets in the creation form and 9 in the editing form
+    fireEvent.click(colorButtons[9]); // First one of the editing section
+
+    await waitFor(() => {
+      expect(onUpdateTag).toHaveBeenCalledWith(1, { color: expect.any(String) });
+    });
   });
 });

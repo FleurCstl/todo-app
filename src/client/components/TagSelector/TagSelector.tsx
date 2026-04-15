@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Tag } from '../../types';
 import { TagBadge } from '../ui/TagBadge/TagBadge';
-import { Tag as TagIcon, Search, Check } from 'lucide-react';
+import { Tag as TagIcon, Search, Check, Plus } from 'lucide-react';
 
 interface TagSelectorProps {
   availableTags: Tag[];
   taskTags: Tag[];
   onAddTag: (tagId: number) => Promise<void>;
   onRemoveTag: (tagId: number) => Promise<void>;
+  onCreateTag?: (name: string) => Promise<void>;
 }
 
-export function TagSelector({ availableTags, taskTags, onAddTag, onRemoveTag }: TagSelectorProps) {
+export function TagSelector({ availableTags, taskTags, onAddTag, onRemoveTag, onCreateTag }: TagSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +40,32 @@ export function TagSelector({ availableTags, taskTags, onAddTag, onRemoveTag }: 
     }
   };
 
+  const handleCreate = async () => {
+    if (onCreateTag && search.trim()) {
+      await onCreateTag(search.trim());
+      setSearch('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const trimmedSearch = search.trim().toLowerCase();
+      const exactMatch = availableTags.find(tag => tag.name.toLowerCase() === trimmedSearch);
+      
+      if (exactMatch) {
+        handleToggle(exactMatch);
+        setSearch('');
+      } else if (search.trim()) {
+        handleCreate();
+      }
+    }
+  };
+
+  const exactMatch = search.trim() ? availableTags.find(tag => 
+    tag.name.toLowerCase() === search.trim().toLowerCase()
+  ) : null;
+
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -63,6 +90,7 @@ export function TagSelector({ availableTags, taskTags, onAddTag, onRemoveTag }: 
                 className="w-full bg-surface border border-border-subtle rounded-xl pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
               />
             </div>
           </div>
@@ -85,6 +113,20 @@ export function TagSelector({ availableTags, taskTags, onAddTag, onRemoveTag }: 
                   )}
                 </button>
               ))
+            )}
+
+            {search.trim() && !exactMatch && (
+              <button
+                onClick={handleCreate}
+                className="w-full flex items-center justify-between p-2 rounded-xl text-left hover:bg-bg transition-colors group text-primary font-medium"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Plus size={14} />
+                  </div>
+                  <span className="text-[11px]">Create "{search.trim()}"</span>
+                </div>
+              </button>
             )}
           </div>
           

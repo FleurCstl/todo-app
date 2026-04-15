@@ -112,4 +112,65 @@ describe('TagSelector', () => {
     fireEvent.mouseDown(screen.getByTestId('outside'));
     expect(screen.queryByPlaceholderText(/search tags/i)).not.toBeInTheDocument();
   });
+
+  it('calls onCreateTag when pressing Enter on a new tag name', async () => {
+    const onCreateTag = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TagSelector 
+        availableTags={mockAvailableTags} 
+        taskTags={mockTaskTags} 
+        onAddTag={async () => {}} 
+        onRemoveTag={async () => {}} 
+        onCreateTag={onCreateTag}
+      />
+    );
+    
+    fireEvent.click(screen.getByTitle(/manage tags for this task/i));
+    const input = screen.getByPlaceholderText(/search tags/i);
+    fireEvent.change(input, { target: { value: 'NewTag' } });
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+    
+    expect(onCreateTag).toHaveBeenCalledWith('NewTag');
+  });
+
+  it('shows create button when no exact match is found', async () => {
+    const onCreateTag = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TagSelector 
+        availableTags={mockAvailableTags} 
+        taskTags={mockTaskTags} 
+        onAddTag={async () => {}} 
+        onRemoveTag={async () => {}} 
+        onCreateTag={onCreateTag}
+      />
+    );
+    
+    fireEvent.click(screen.getByTitle(/manage tags for this task/i));
+    fireEvent.change(screen.getByPlaceholderText(/search tags/i), { target: { value: 'NewTag' } });
+    
+    const createButton = screen.getByText(/create "NewTag"/i);
+    expect(createButton).toBeInTheDocument();
+    
+    fireEvent.click(createButton);
+    expect(onCreateTag).toHaveBeenCalledWith('NewTag');
+  });
+
+  it('toggles existing tag when pressing Enter on an exact match', async () => {
+    const onAddTag = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TagSelector 
+        availableTags={mockAvailableTags} 
+        taskTags={mockTaskTags} 
+        onAddTag={onAddTag} 
+        onRemoveTag={async () => {}} 
+      />
+    );
+    
+    fireEvent.click(screen.getByTitle(/manage tags for this task/i));
+    const input = screen.getByPlaceholderText(/search tags/i);
+    fireEvent.change(input, { target: { value: 'Urgent' } });
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+    
+    expect(onAddTag).toHaveBeenCalledWith(2);
+  });
 });

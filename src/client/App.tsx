@@ -125,11 +125,42 @@ export default function App() {
     try {
       const res = await api.tags.$post({ json: { name, color } });
       if (res.ok) {
-        const newTag = await res.json();
+        const newTagArr = await res.json();
+        // Hono might return the object directly or an array depending on implementation
+        // But the schema says it returns TagSchema
+        const newTag = newTagArr;
         setTags([...tags, newTag]);
+        return newTag;
       }
     } catch (error) {
       console.error('Failed to create tag:', error);
+    }
+  };
+
+  const handleQuickCreateTag = async (taskId: number, name: string) => {
+    const newTag = await handleCreateTag(name, '#6b7280');
+    if (newTag) {
+      await handleAddTagToTask(taskId, newTag.id);
+    }
+  };
+
+  const handleUpdateTag = async (id: number, data: { name?: string, color?: string }) => {
+    try {
+      const res = await api.tags[':id'].$patch({
+        param: { id: id.toString() },
+        json: data
+      });
+      if (res.ok) {
+        const updatedTag = await res.json();
+        setTags(tags.map(t => t.id === id ? updatedTag : t));
+        // Also update tags in the tasks state
+        setTasks(tasks.map(task => ({
+          ...task,
+          tags: task.tags?.map(tag => tag.id === id ? updatedTag : tag)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to update tag:', error);
     }
   };
 
@@ -540,6 +571,7 @@ export default function App() {
                               taskTags={task.tags || []} 
                               onAddTag={(tagId) => handleAddTagToTask(task.id, tagId)}
                               onRemoveTag={(tagId) => handleRemoveTagFromTask(task.id, tagId)}
+                              onCreateTag={(name) => handleQuickCreateTag(task.id, name)}
                             />
                             <DatePicker 
                               date={task.deadline} 
@@ -569,6 +601,7 @@ export default function App() {
         onClose={() => setIsTagModalOpen(false)} 
         tags={tags}
         onCreateTag={handleCreateTag}
+        onUpdateTag={handleUpdateTag}
         onDeleteTag={handleDeleteTag}
       />
     </div>
