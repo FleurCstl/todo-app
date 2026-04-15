@@ -87,5 +87,5 @@ You are an expert developer working on this codebase. You MUST adhere to the fol
 11. **Git Commit Hygiene**: 
     - Follow the `git-commit` skill strictly.
     - Use granular commits.
-    - Every commit MUST include a `Co-authored-by: Antigravity <antigravity@googlemind.com>` trailer.
+    - Every commit MUST include a `Co-authored-by` trailer using the current agent's identity (e.g., `Antigravity <antigravity@googlemind.com>`).
     - **NEVER** push to GitHub without explicit USER validation.
