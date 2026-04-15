@@ -4,11 +4,12 @@ description: Workflow for finalizing tasks and committing changes following conv
 ---
 
 ## Context
-Standardized commit messages and clean code submissions are essential for maintainability and clear project history.
+Standardized commit messages and clean code submissions are essential for maintainability and clear project history. Every commit must follow strict conventional formats and include co-author attribution.
 
 ## Prerequisites
 - Successful completion of `test-validation` skill.
 - No placeholder code or TODOs remaining.
+- All linting and tests pass (`pnpm lint`, `pnpm test`).
 
 ## Core Workflow
 
@@ -17,27 +18,34 @@ Standardized commit messages and clean code submissions are essential for mainta
 - Ensure all debug logs (`console.log`) are removed.
 - Verify compliance with `AGENTS.md`.
 
-### 2. Stage Changes
-Stage only the relevant files:
+### 2. Strategic Committing
+- **Granular Commits**: Do not hesitate to make multiple commits. Separate different types of changes (e.g., `feat`, `fix`, `refactor`) into distinct commits to keep the history clear.
+- **Atomic Changes**: Each commit should represent a single logical change.
+
+### 3. Stage & Format
+Stage relevant files for each logical unit:
 ```bash
 git add [files]
 ```
 
-### 3. Commit with Conventional Format
-Use the following prefixes:
-- `feat:` for new features.
-- `fix:` for bug fixes.
-- `docs:` for documentation changes.
-- `style:` for formatting/styling.
-- `refactor:` for code changes that neither fix a bug nor add a feature.
-- `test:` for adding or updating tests.
+### 4. Commit Message (Conventional Commits)
+Respect the `commitlint` conventions:
+- **Format**: `<type>(<scope>): <description>`
+- **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- **Scope**: (Optional but recommended) The section of the codebase (e.g., `client`, `server`, `shared`, `db`).
+- **Description**: Short, imperative, lowercase, no period at the end.
 
-Example:
-```bash
-git commit -m "feat: add list editing functionality with pencil icon"
-```
+### 5. Co-Authoring
+Every commit made by the AI must include a `Co-authored-by` trailer in the commit message body to credit the agent.
+- **Format**: `Co-authored-by: NAME <EMAIL>`
+- **Agent Attribution**: Use `Antigravity <antigravity@googlemind.com>`.
+
+### 6. Validation Before Push
+- **Ask for Approval**: You MUST explicitly ask the USER for validation before pushing any commits to GitHub.
+- **Do NOT push automatically**.
 
 ## Success Criteria
-- [ ] Commit message follows the conventional format.
-- [ ] Only relevant files are staged and committed.
-- [ ] `AGENTS.md` guidelines are fully respected.
+- [ ] Commit message follows `<type>(<scope>): <description>` format.
+- [ ] Changes are split into logical, granular commits where applicable.
+- [ ] Each commit includes a `Co-authored-by` footer.
+- [ ] USER validation is obtained before `git push`.
