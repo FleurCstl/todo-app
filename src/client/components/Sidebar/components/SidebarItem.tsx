@@ -20,9 +20,17 @@ export function SidebarItem({ list, isActive, onSelect, onEdit, stats, compact =
   const hasStats = stats && stats.total > 0;
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(list.id)}
-      className={`w-full group/list flex flex-col gap-1.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(list.id);
+        }
+      }}
+      className={`w-full group/list flex flex-col gap-1.5 rounded-xl transition-all duration-200 text-sm font-medium cursor-pointer ${
         compact ? 'px-3 py-2' : 'px-3 py-2.5'
       } ${
         isActive
@@ -51,7 +59,10 @@ export function SidebarItem({ list, isActive, onSelect, onEdit, stats, compact =
         )}
         
         <button
-          onClick={(e) => onEdit(e, list)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(e, list);
+          }}
           className={`opacity-0 group-hover/list:opacity-60 hover:!opacity-100 p-1 text-text-muted hover:text-primary transition-all ${compact ? '' : ''}`}
           title="Modifier la liste"
         >
@@ -69,6 +80,6 @@ export function SidebarItem({ list, isActive, onSelect, onEdit, stats, compact =
           </div>
         </div>
       )}
-    </button>
+    </div>
   );
 }

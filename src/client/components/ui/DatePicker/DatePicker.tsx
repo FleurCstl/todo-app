@@ -30,9 +30,10 @@ export function DatePicker({ date, onSelect, className = "" }: DatePickerProps) 
     <div className={`relative inline-flex items-center ${className}`}>
       <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
         <Popover.Trigger asChild>
-          <button
-            type="button"
-            className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 ${
+          <div
+            role="button"
+            tabIndex={0}
+            className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer ${
               date 
                 ? 'bg-primary/10 border-primary/30 text-primary shadow-sm hover:border-primary/50' 
                 : 'bg-bg border-border-subtle/50 text-text-muted hover:border-primary/30'
@@ -53,7 +54,7 @@ export function DatePicker({ date, onSelect, className = "" }: DatePickerProps) 
                 <X size={12} />
               </button>
             )}
-          </button>
+          </div>
         </Popover.Trigger>
 
         <Popover.Portal>
