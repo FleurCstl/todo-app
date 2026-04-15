@@ -3,5 +3,6 @@
   "entry": [
     "src/server/index.ts"
   ],
-  "project": ["src/**/*.{ts,tsx}"]
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreDependencies": ["tailwindcss"]
 }
