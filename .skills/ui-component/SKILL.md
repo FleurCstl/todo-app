@@ -29,18 +29,34 @@ Place components in `src/client/components/` or a feature-specific subdirectory.
 Example:
 ```tsx
 import { Pencil } from 'lucide-react';
+import { Tooltip } from './ui/Tooltip'; // Example path
 
 export const EditButton = ({ onClick }: { onClick: () => void }) => (
-  <button 
-    onClick={onClick}
-    className="p-2 transition-all duration-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 hover:text-indigo-600 active:scale-95"
-  >
-    <Pencil size={18} />
-  </button>
+  <Tooltip content="Edit Task">
+    <button 
+      onClick={onClick}
+      aria-label="Edit task"
+      className="p-3 m-1 transition-all duration-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 hover:text-indigo-600 active:scale-95 flex items-center justify-center"
+    >
+      <Pencil size={20} />
+    </button>
+  </Tooltip>
 );
 ```
 
+### 4. Accessibility & Tooltips
+- Every interactive element without a visible text label (e.g., an icon-only button) **MUST** have a Tooltip component wrapping it to provide context.
+- Use `aria-label` or `aria-labelledby` for all interactive elements to ensure screen reader Compatibility.
+- Ensure keyboard navigability (focus states, `tabIndex`).
+
+### 5. Mobile-Friendly Design
+- Ensure touch targets are at least `44x44px` for mobile devices.
+- Use responsive Tailwind classes (`sm:`, `md:`, `lg:`) to adapt layouts for different screen sizes.
+- Prioritize ease of use on touch screens (e.g., avoiding hover-only critical actions without mobile alternatives).
+
 ## Success Criteria
-- [ ] Component is responsive and looks premium.
-- [ ] Accessibility: Interactive elements have descriptive IDs and aria-labels.
+- [ ] Component is fully responsive and mobile-friendly (large touch targets, adaptive layout).
+- [ ] Accessibility: Interactive elements have descriptive IDs, `aria-label`, and are keyboard-navigable.
+- [ ] Tooltips: Icon-only buttons or label-less elements are wrapped in a Tooltip.
+- [ ] Premium Aesthetics: Vibrant colors, smooth transitions, and modern typography are used.
 - [ ] No inline styles unless strictly necessary for dynamic values.

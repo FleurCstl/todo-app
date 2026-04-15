@@ -94,3 +94,4 @@ You are an expert developer working on this codebase. You MUST adhere to the fol
     - **NEVER** push to GitHub without explicit USER validation.
 12. **Documentation Maintenance**: Follow the `documentation-maintenance` skill. Ensure that `README.md` and any relevant files in `docs/` are updated whenever you introduce a new feature or change the technical architecture. The goal is to keep documentation synchronized with the codebase at all times.
 13. **Dev Planning**: Follow the `dev-planning` skill. Create a `DEVPLAN.md` for every new feature, track progress by checking tasks, and delete the file before committing. Do NOT commit if tasks are incomplete.
+14. **UI & Accessibility**: Adhere strictly to the [`ui-component`](.skills/ui-component/SKILL.md) skill. Every label-less interactive element (e.g., icon-only buttons) MUST have a tooltip. All components must be mobile-friendly and prioritize accessibility (ARIA labels, keyboard navigation).
