@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "dead-code-check": "knip",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.6.1",
@@ -16,7 +18,6 @@
     "@libsql/client": "^0.17.2",
     "@radix-ui/react-popover": "^1.1.15",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.12",
     "lucide-react": "^0.453.0",
@@ -26,6 +27,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^9.13.0",
     "@hono/vite-dev-server": "^0.25.1",
     "@tailwindcss/vite": "^4.0.0",
@@ -40,8 +43,9 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.13",
     "globals": "^15.11.0",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
-    "tailwindcss": "^4.0.0",
+    "knip": "^6.4.1",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.11.0",
     "vite": "^5.4.9",
