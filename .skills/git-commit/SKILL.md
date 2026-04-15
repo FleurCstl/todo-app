@@ -36,9 +36,9 @@ Respect the `commitlint` conventions:
 - **Description**: Short, imperative, lowercase, no period at the end.
 
 ### 5. Co-Authoring
-Every commit made by the AI must include a `Co-authored-by` trailer in the commit message body to credit the agent.
+Every commit made by an AI agent must include a `Co-authored-by` trailer in the commit message body for proper attribution.
 - **Format**: `Co-authored-by: NAME <EMAIL>`
-- **Agent Attribution**: Use `Antigravity <antigravity@googlemind.com>`.
+- **Agent Attribution**: Use the identity provided in your system instructions (e.g., `Antigravity <antigravity@googlemind.com>`).
 
 ### 6. Validation Before Push
 - **Ask for Approval**: You MUST explicitly ask the USER for validation before pushing any commits to GitHub.
