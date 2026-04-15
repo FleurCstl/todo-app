@@ -16,10 +16,6 @@ export const UpdateTagSchema = z.object({
   color: z.string().optional().openapi({ example: '#dc2626' }),
 }).openapi('UpdateTag');
 
-export const TodoTagSchema = z.object({
-  todoId: z.number().openapi({ example: 1 }),
-  tagId: z.number().openapi({ example: 1 }),
-}).openapi('TodoTag');
 
 export const ErrorSchema = z.object({
   error: z.string().openapi({ example: 'Not Found' }),
