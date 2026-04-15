@@ -13,7 +13,14 @@ Standardized commit messages and clean code submissions are essential for mainta
 
 ## Core Workflow
 
-### 1. Code Review & Cleanup
+### 1. Pre-Commit Validation (MANDATORY)
+Run the `test-validation` skill. If any part fails (tests or linting):
+- **STOP** the commit process immediately.
+- **FIX** the issues detected.
+- **RE-RUN** the validation until everything passes.
+- **DO NOT** attempt to commit until all checks are green.
+
+### 2. Code Review & Cleanup
 - Check for "TODO" or placeholder comments.
 - Ensure all debug logs (`console.log`) are removed.
 - Verify compliance with `AGENTS.md`.

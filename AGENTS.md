@@ -67,7 +67,7 @@ This is a modern full-stack todo application designed with performance and devel
 
 - **Conventional Commits**: All commits must follow the `commitlint` convention: `<type>(<scope>): <description>`.
 - **Granularity**: Prefer multiple small, logical commits over one giant commit.
-- **Verification**: Ensure `pnpm lint` and `pnpm test` pass before committing.
+- **Verification**: Run the `test-validation` skill. Ensure `pnpm lint` and `pnpm test` pass before committing. Fix any failures immediately.
 - **Documentation**: Document any new API endpoints or significant architectural changes here or in relevant docstrings.
 
 ## 🤖 Instructions for AI Agents
@@ -82,7 +82,10 @@ You are an expert developer working on this codebase. You MUST adhere to the fol
 6. **No Placeholders**: Never use placeholders or "TODO" comments in code changes unless explicitly requested. Provide complete, working implementations.
 7. **Clean Diffs**: Produce focused changes. Run `pnpm lint` after your modifications to ensure no linting errors were introduced.
 8. **Documentation**: Every function MUST have a descriptive JSDoc comment. Complicated logic MUST be explained with inline comments to aid maintainability.
-9. **Test-Driven Development**: Always generate test files for any new frontend component or backend feature. Ensure all tests pass before completing the task.
+9. **Test-Driven Development & Validation**: 
+    - Always generate test files for any new frontend component or backend feature. 
+    - You MUST run `pnpm test` before every commit. 
+    - If tests fail, you MUST block the commit and fix the issues immediately before proceeding.
 10. **Logic & Modularity**: Adhere strictly to the **Logic Organization** skill. Decompose "mega-components", extract logic into dedicated sub-folders, and generate mandatory tests for all extracted units.
 11. **Git Commit Hygiene**: 
     - Follow the `git-commit` skill strictly.
