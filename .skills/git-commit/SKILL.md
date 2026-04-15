@@ -9,6 +9,7 @@ Standardized commit messages and clean code submissions are essential for mainta
 ## Prerequisites
 - Successful completion of `test-validation` skill.
 - No placeholder code or TODOs remaining.
+- `DEVPLAN.md` has been deleted (all tasks must be completed).
 - All linting and tests pass (`pnpm lint`, `pnpm test`).
 
 ## Core Workflow
